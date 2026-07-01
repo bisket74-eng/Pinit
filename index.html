@@ -845,6 +845,10 @@
   let manualExistingStatus = 'open';
   let isManualOpen = false;
 
+  let manualLocationLat = null;
+  let manualLocationLon = null;
+  let manualLocationAddress = "";
+
   function toast(msg){
     toastEl.textContent = msg;
     toastEl.classList.add('show');
@@ -1011,6 +1015,93 @@
     return uploaded;
   }
 
+  function getCurrentLocation(){
+    return new Promise((resolve, reject)=>{
+      if(!navigator.geolocation){
+        reject(new Error("Geolocation is not supported on this device."));
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        position=>{
+          resolve({
+            lat: position.coords.latitude,
+            lon: position.coords.longitude
+          });
+        },
+        error=>{
+          reject(error);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 12000,
+          maximumAge: 0
+        }
+      );
+    });
+  }
+
+  async function reverseGeocodeCoords(lat, lon){
+    try{
+      const resp = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`,
+        {
+          headers:{
+            'Accept-Language':'en'
+          }
+        }
+      );
+
+      if(!resp.ok){
+        return null;
+      }
+
+      const data = await resp.json();
+
+      if(data && data.display_name){
+        return {
+          lat,
+          lon,
+          display_name: data.display_name
+        };
+      }
+    } catch(err){
+      console.log("Reverse geocode failed:", err);
+    }
+
+    return null;
+  }
+
+  async function fillAddressFromCurrentLocation(){
+    manualAddressStatus.textContent = "Getting your current location...";
+
+    try{
+      const loc = await getCurrentLocation();
+
+      manualLocationLat = loc.lat;
+      manualLocationLon = loc.lon;
+
+      manualAddressStatus.textContent = "Finding address from your location...";
+
+      const found = await reverseGeocodeCoords(loc.lat, loc.lon);
+
+      if(found && found.display_name){
+        manualLocationAddress = found.display_name;
+        manualAddress.value = found.display_name;
+
+        manualExistingLat = found.lat;
+        manualExistingLon = found.lon;
+
+        manualAddressStatus.textContent = "Address filled from your current location. You can still edit it.";
+      } else {
+        manualAddressStatus.textContent = "Location found, but address lookup failed. You can type the address manually.";
+      }
+    } catch(err){
+      console.log("Location permission/location failed:", err);
+      manualAddressStatus.textContent = "Location was not allowed or could not be found. You can still type the address manually.";
+    }
+  }
+
   async function forwardGeocodeAddress(addressText){
     try{
       const alreadyHasCityOrZip =
@@ -1076,6 +1167,10 @@
     manualExistingStatus = entry?.status || 'open';
     manualPhotos = [];
 
+    manualLocationLat = null;
+    manualLocationLon = null;
+    manualLocationAddress = "";
+
     manualTitle.textContent = manualEditId ? 'Edit Case' : 'Add Manually';
     manualSaveBtn.textContent = manualEditId ? 'Update Case' : 'Add Case';
     manualAddress.value = entry?.address || '';
@@ -1099,6 +1194,11 @@
     manualAddress.value = '';
     manualViolation.value = '';
     manualAddressStatus.textContent = 'City/state/zip not needed. It will search nearby areas first.';
+
+    manualLocationLat = null;
+    manualLocationLon = null;
+    manualLocationAddress = "";
+
     renderManualPreviews();
   }
 
@@ -1144,7 +1244,11 @@
     }
   });
 
-  takePhotoBtn.addEventListener('click', ()=> cameraInput.click());
+  takePhotoBtn.addEventListener('click', async ()=>{
+    await fillAddressFromCurrentLocation();
+    cameraInput.click();
+  });
+
   choosePhotoBtn.addEventListener('click', ()=> manualPhotoInput.click());
 
   cameraInput.addEventListener('change', async e=>{
@@ -1188,12 +1292,26 @@
     try{
       const found = await forwardGeocodeAddress(typedAddress);
 
+      const addressWasAutoFilled =
+        manualLocationAddress &&
+        normalizeSearchText(typedAddress) === normalizeSearchText(manualLocationAddress);
+
       const finalAddress = found?.display_name || typedAddress;
-      const finalLat = found?.lat ?? manualExistingLat;
-      const finalLon = found?.lon ?? manualExistingLon;
+
+      const finalLat =
+        found?.lat ??
+        (addressWasAutoFilled ? manualLocationLat : null) ??
+        manualExistingLat;
+
+      const finalLon =
+        found?.lon ??
+        (addressWasAutoFilled ? manualLocationLon : null) ??
+        manualExistingLon;
 
       if(found){
         manualAddressStatus.textContent = finalAddress;
+      } else if(addressWasAutoFilled && manualLocationLat && manualLocationLon){
+        manualAddressStatus.textContent = 'Saving with the GPS location from your phone.';
       } else {
         manualAddressStatus.textContent = 'Map lookup did not find it. Saving the address exactly as typed.';
       }
