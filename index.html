@@ -173,6 +173,51 @@
     margin:4px 0 10px;
     font-weight:700;
   }
+  .case-summary,
+.case-summary *,
+button,
+.pill,
+.badge,
+.case-no,
+.row-actions,
+.row-actions *,
+.manual-head,
+.manual-actions,
+.photo-buttons{
+  -webkit-user-select:none;
+  user-select:none;
+  -webkit-touch-callout:none;
+  touch-action:manipulation;
+}
+
+.case-summary{
+  -webkit-tap-highlight-color:transparent;
+}
+
+.case-summary .addr{
+  pointer-events:none;
+}
+
+.case-summary .open-arrow{
+  pointer-events:none;
+  flex:0 0 auto;
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  border:1px solid var(--rule);
+  background:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:20px;
+  font-weight:800;
+  color:var(--amber-dark);
+  margin-left:10px;
+}
+
+.entry.open-card .case-summary .open-arrow{
+  transform:rotate(180deg);
+}
 
   .entry{
     background:var(--card);
@@ -190,25 +235,27 @@
   }
 
   .case-summary{
-    cursor:pointer;
-    padding:16px 18px;
-    display:flex;
-    align-items:center;
-    min-height:72px;
-  }
+  cursor:pointer;
+  padding:16px 18px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  min-height:72px;
+}
 
   .case-summary:hover{
     background:#FFF9ED;
   }
 
-  .case-summary .addr{
-    font-family:'Fraunces', Georgia, serif;
-    font-weight:800;
-    font-size:25px;
-    line-height:1.15;
-    color:var(--ink);
-    width:100%;
-  }
+ .case-summary .addr{
+  font-family:'Fraunces', Georgia, serif;
+  font-weight:800;
+  font-size:25px;
+  line-height:1.15;
+  color:var(--ink);
+  width:100%;
+}
 
   .case-details{
     display:none;
@@ -602,19 +649,43 @@
     display:block;
   }
 
-  .manual-preview span{
-    position:absolute;
-    right:0;
-    top:0;
-    width:22px;
-    height:22px;
-    line-height:22px;
-    text-align:center;
-    background:rgba(58,49,40,.72);
-    color:#fff;
-    cursor:pointer;
-    font-weight:800;
-  }
+  .manual-preview .photo-check{
+  position:absolute;
+  left:5px;
+  top:5px;
+  width:26px;
+  height:26px;
+  border-radius:50%;
+  background:#2f8f46;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:18px;
+  font-weight:900;
+  border:2px solid #fff;
+  box-shadow:0 2px 7px rgba(0,0,0,.35);
+  pointer-events:none;
+}
+
+.manual-preview .photo-trash{
+  position:absolute;
+  right:5px;
+  top:5px;
+  width:28px;
+  height:28px;
+  border-radius:50%;
+  background:#b43328;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:17px;
+  font-weight:900;
+  cursor:pointer;
+  border:2px solid #fff;
+  box-shadow:0 2px 7px rgba(0,0,0,.35);
+}
 
   .address-status{
     font-size:13px;
@@ -1248,15 +1319,15 @@ setTimeout(()=> manualAddress.focus(), 80);
       ...manualExistingPhotos.map(src => ({ src, type:'existing' })),
       ...manualPhotos.map(src => ({ src, type:'new' }))
     ];
+manualPreviews.innerHTML = allPhotos.map((photo, index)=> `
+  <div class="manual-preview">
+    <img src="${escapeHtml(photo.src)}" alt="photo">
+    <div class="photo-check">✓</div>
+    <div class="photo-trash" data-index="${index}" data-type="${photo.type}">🗑</div>
+  </div>
+`).join('');
 
-    manualPreviews.innerHTML = allPhotos.map((photo, index)=> `
-      <div class="manual-preview">
-        <img src="${escapeHtml(photo.src)}" alt="photo">
-        <span data-index="${index}" data-type="${photo.type}">×</span>
-      </div>
-    `).join('');
-
-    manualPreviews.querySelectorAll('span').forEach(btn=>{
+   manualPreviews.querySelectorAll('.photo-trash').forEach(btn=>{
       btn.addEventListener('click', e=>{
         e.stopPropagation();
         const index = Number(btn.dataset.index);
@@ -1453,9 +1524,10 @@ setTimeout(()=> manualAddress.focus(), 80);
 
       return `
         <div class="entry ${status} ${isOpen ? 'open-card' : ''}" data-id="${e.id}">
-          <div class="case-summary" data-id="${e.id}">
-            <div class="addr">${escapeHtml(shortAddress(e.address || 'No address yet'))}</div>
-          </div>
+         <div class="case-summary" data-id="${e.id}">
+  <div class="addr">${escapeHtml(shortAddress(e.address || 'No address yet'))}</div>
+  <div class="open-arrow">⌄</div>
+</div>
 
           <div class="case-details">
             <div class="details-topline">
@@ -1490,8 +1562,15 @@ setTimeout(()=> manualAddress.focus(), 80);
       `;
     }).join('');
 
-    logList.querySelectorAll('.case-summary').forEach(summary=>{
-  summary.addEventListener('click', ()=>{
+   logList.querySelectorAll('.case-summary').forEach(summary=>{
+  summary.addEventListener('touchstart', e=>{
+    e.preventDefault();
+  }, { passive:false });
+
+  summary.addEventListener('click', e=>{
+    e.preventDefault();
+    e.stopPropagation();
+
     const id = summary.dataset.id;
 
     if(openEntryId === id){
@@ -1772,6 +1851,17 @@ setTimeout(()=> manualAddress.focus(), 80);
       });
     });
   }
+   document.addEventListener('selectstart', e=>{
+  if(
+    e.target.closest('button') ||
+    e.target.closest('.pill') ||
+    e.target.closest('.case-summary') ||
+    e.target.closest('.badge') ||
+    e.target.closest('.case-no')
+  ){
+    e.preventDefault();
+  }
+}); 
 
   initPhotoViewer();
   renderLog();
