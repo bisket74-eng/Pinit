@@ -31,8 +31,6 @@
     --sage:#767D5F;
     --sage-dark:#5C6249;
     --rust:#A85338;
-    --line-link:#5C6E63;
-    --danger:#A85338;
   }
 
   *{ box-sizing:border-box; }
@@ -185,7 +183,6 @@
     border-left:6px solid var(--rust);
     border-radius:10px;
     margin-bottom:12px;
-    position:relative;
     overflow:hidden;
   }
 
@@ -210,34 +207,30 @@
   }
 
   .case-summary .addr{
-    font-family:'Fraunces', Georgia, serif;
+    font-family:'Karla', Arial, sans-serif;
     font-weight:800;
-    font-size:25px;
+    font-size:23px;
     line-height:1.15;
     color:var(--ink);
     flex:1;
     pointer-events:none;
   }
 
-  .case-summary .open-arrow{
+  .case-summary .open-toggle{
     pointer-events:none;
     flex:0 0 auto;
-    width:34px;
-    height:34px;
+    width:40px;
+    height:40px;
     border-radius:50%;
     border:1px solid var(--rule);
     background:#fff;
     display:flex;
     align-items:center;
     justify-content:center;
-    font-size:20px;
+    font-size:28px;
     font-weight:800;
+    line-height:1;
     color:var(--amber-dark);
-    margin-left:10px;
-  }
-
-  .entry.open-card .case-summary .open-arrow{
-    transform:rotate(180deg);
   }
 
   .case-details{
@@ -287,10 +280,10 @@
   }
 
   .full-address{
-    font-family:'Fraunces', Georgia, serif;
+    font-family:'Karla', Arial, sans-serif;
     font-weight:700;
-    font-size:21px;
-    line-height:1.25;
+    font-size:20px;
+    line-height:1.35;
     margin-top:8px;
     color:var(--ink);
     white-space:pre-line;
@@ -650,42 +643,23 @@
     display:block;
   }
 
-  .manual-preview .photo-check{
-    position:absolute;
-    left:5px;
-    top:5px;
-    width:26px;
-    height:26px;
-    border-radius:50%;
-    background:#2f8f46;
-    color:#fff;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:18px;
-    font-weight:900;
-    border:2px solid #fff;
-    box-shadow:0 2px 7px rgba(0,0,0,.35);
-    pointer-events:none;
-  }
-
-  .manual-preview .photo-trash{
+  .manual-preview .photo-remove{
     position:absolute;
     right:5px;
     top:5px;
-    width:28px;
-    height:28px;
+    width:24px;
+    height:24px;
     border-radius:50%;
-    background:#b43328;
-    color:#fff;
+    background:#fff;
+    color:#111;
     display:flex;
     align-items:center;
     justify-content:center;
-    font-size:17px;
+    font-size:16px;
     font-weight:900;
     cursor:pointer;
-    border:2px solid #fff;
-    box-shadow:0 2px 7px rgba(0,0,0,.35);
+    border:1px solid rgba(0,0,0,.22);
+    box-shadow:0 2px 5px rgba(0,0,0,.18);
   }
 
   .address-status{
@@ -750,7 +724,7 @@
     }
 
     .case-summary .addr{
-      font-size:22px;
+      font-size:21px;
     }
 
     .case-details{
@@ -758,7 +732,7 @@
     }
 
     .full-address{
-      font-size:19px;
+      font-size:18px;
     }
 
     .note{
@@ -842,7 +816,7 @@
 
     <div class="manual-field">
       <label>Address</label>
-      <input type="text" id="manualAddress" placeholder="Example: 123 Main st">
+      <input type="text" id="manualAddress" placeholder="Example: 8615 NE 25th Cir">
       <div class="address-status" id="manualAddressStatus">City/state/zip not needed. It will search nearby areas first.</div>
     </div>
 
@@ -1097,12 +1071,21 @@
     return '';
   }
 
-  function displayAddress(address){
+  function displayAddressMulti(address){
     const street = cleanStreetAddress(address);
     const cityStateZip = cleanCityStateZip(address);
 
     return cityStateZip
       ? `${street}\n${cityStateZip}`
+      : street;
+  }
+
+  function displayAddressSingle(address){
+    const street = cleanStreetAddress(address);
+    const cityStateZip = cleanCityStateZip(address);
+
+    return cityStateZip
+      ? `${street}, ${cityStateZip}`
       : street;
   }
 
@@ -1283,8 +1266,7 @@
 
       if(found && found.display_name){
         manualLocationAddress = found.display_name;
-
-        manualAddress.value = displayAddress(found.display_name);
+        manualAddress.value = displayAddressSingle(found.display_name);
 
         manualExistingLat = found.lat;
         manualExistingLon = found.lon;
@@ -1370,7 +1352,7 @@
 
     manualTitle.textContent = manualEditId ? 'Edit Case' : 'Add Manually';
     manualSaveBtn.textContent = manualEditId ? 'Update Case' : 'Add Case';
-    manualAddress.value = entry?.address ? displayAddress(entry.address) : '';
+    manualAddress.value = entry?.address ? displayAddressSingle(entry.address) : '';
     manualViolation.value = getViolationOnly(entry?.note || '');
     manualAddressStatus.textContent = 'City/state/zip not needed. It will search nearby areas first.';
 
@@ -1415,12 +1397,11 @@
     manualPreviews.innerHTML = allPhotos.map((photo, index)=> `
       <div class="manual-preview">
         <img src="${escapeHtml(photo.src)}" alt="photo">
-        <div class="photo-check">✓</div>
-        <div class="photo-trash" data-index="${index}" data-type="${photo.type}">🗑</div>
+        <div class="photo-remove" data-index="${index}" data-type="${photo.type}">×</div>
       </div>
     `).join('');
 
-    manualPreviews.querySelectorAll('.photo-trash').forEach(btn=>{
+    manualPreviews.querySelectorAll('.photo-remove').forEach(btn=>{
       btn.addEventListener('click', e=>{
         e.stopPropagation();
         const index = Number(btn.dataset.index);
@@ -1499,7 +1480,7 @@
 
       const addressWasAutoFilled =
         manualLocationAddress &&
-        normalizeSearchText(typedAddress) === normalizeSearchText(displayAddress(manualLocationAddress));
+        normalizeSearchText(typedAddress) === normalizeSearchText(displayAddressSingle(manualLocationAddress));
 
       const finalAddress = found?.display_name || manualLocationAddress || typedAddress;
 
@@ -1514,7 +1495,7 @@
         manualExistingLon;
 
       if(found){
-        manualAddressStatus.textContent = displayAddress(finalAddress);
+        manualAddressStatus.textContent = displayAddressSingle(finalAddress);
       } else if(addressWasAutoFilled && manualLocationLat && manualLocationLon){
         manualAddressStatus.textContent = 'Saving with the GPS location from your phone.';
       } else {
@@ -1579,14 +1560,16 @@
     let filtered = query ? entries.filter(e => {
       const address = normalizeSearchText(e.address || '');
       const shortAddr = normalizeSearchText(shortAddress(e.address || ''));
-      const prettyAddr = normalizeSearchText(displayAddress(e.address || ''));
+      const prettyAddrSingle = normalizeSearchText(displayAddressSingle(e.address || ''));
+      const prettyAddrMulti = normalizeSearchText(displayAddressMulti(e.address || ''));
       const note = normalizeSearchText(e.note || '');
       const emailBody = normalizeSearchText(e.emailBody || '');
 
       return (
         address.includes(query) ||
         shortAddr.includes(query) ||
-        prettyAddr.includes(query) ||
+        prettyAddrSingle.includes(query) ||
+        prettyAddrMulti.includes(query) ||
         note.includes(query) ||
         emailBody.includes(query)
       );
@@ -1616,12 +1599,13 @@
       const violationOnly = getViolationOnly(e.note || '');
       const isOpen = openEntryId === e.id;
       const number = String(entries.length - index).padStart(3,'0');
+      const toggleSymbol = isOpen ? '−' : '+';
 
       return `
         <div class="entry ${status} ${isOpen ? 'open-card' : ''}" data-id="${e.id}">
           <div class="case-summary" data-id="${e.id}">
             <div class="addr">${escapeHtml(shortAddress(e.address || 'No address yet'))}</div>
-            <div class="open-arrow">⌄</div>
+            <div class="open-toggle">${toggleSymbol}</div>
           </div>
 
           <div class="case-details">
@@ -1633,7 +1617,7 @@
               <div class="case-no">#${number}</div>
             </div>
 
-            <div class="full-address">${escapeHtml(displayAddress(e.address || 'No address yet'))}</div>
+            <div class="full-address">${escapeHtml(displayAddressMulti(e.address || 'No address yet'))}</div>
 
             <div class="note"><strong>Possible violation:</strong> ${escapeHtml(violationOnly)}</div>
 
@@ -1658,10 +1642,6 @@
     }).join('');
 
     logList.querySelectorAll('.case-summary').forEach(summary=>{
-      summary.addEventListener('touchstart', e=>{
-        e.preventDefault();
-      }, { passive:false });
-
       summary.addEventListener('click', e=>{
         e.preventDefault();
         e.stopPropagation();
@@ -1774,7 +1754,7 @@
 
     rows.push([
       e.address || '',
-      displayAddress(e.address || '').replace(/\n/g, ' '),
+      displayAddressSingle(e.address || ''),
       e.lat || '',
       e.lon || '',
       e.capturedAt ? new Date(e.capturedAt).toLocaleString() : '',
