@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Pin It">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="manifest" href="./manifest.json">
+<link rel="manifest" href="./manifest.json?v=gis1">
 <link rel="apple-touch-icon" href="./icon-192.png">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -287,6 +287,38 @@
     margin-top:8px;
     color:var(--ink);
     white-space:pre-line;
+  }
+
+  .gis-info{
+    margin-top:10px;
+    padding:10px 12px;
+    border:1px dashed var(--rule);
+    border-radius:8px;
+    background:#fffaf0;
+    color:var(--ink);
+    font-family:'Karla', Arial, sans-serif;
+    font-size:15px;
+    line-height:1.35;
+  }
+
+  .gis-info .gis-label{
+    display:block;
+    margin-top:8px;
+    color:var(--amber-dark);
+    font-size:12px;
+    font-weight:900;
+    letter-spacing:.07em;
+    text-transform:uppercase;
+  }
+
+  .gis-info .gis-label:first-child{
+    margin-top:0;
+  }
+
+  .gis-info .gis-value{
+    display:block;
+    margin-top:2px;
+    font-weight:800;
   }
 
   .date{
@@ -896,6 +928,7 @@
   let manualLocationLat = null;
   let manualLocationLon = null;
   let manualLocationAddress = "";
+  const gisBackfillIds = new Set();
 
   function pushAppHistory(type, id){
     if(handlingBackButton) return;
@@ -1093,6 +1126,87 @@
     return cleanStreetAddress(address);
   }
 
+  function cleanText(value){
+    return String(value || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function officialStreetAddress(entry){
+    return cleanText(entry.gisSiteAddress) || shortAddress(entry.address || '');
+  }
+
+  function officialCityStateZip(entry){
+    return cleanText(entry.gisCityStateZip) || cleanCityStateZip(entry.address || '');
+  }
+
+  function officialDisplayAddress(entry){
+    const street = officialStreetAddress(entry);
+    const cityZip = officialCityStateZip(entry);
+
+    return cityZip ? `${street}\n${cityZip}` : street;
+  }
+
+  function hasGisInfo(entry){
+    return !!(
+      cleanText(entry.gisSiteAddress) ||
+      cleanText(entry.gisCityStateZip) ||
+      cleanText(entry.gisLegalShort) ||
+      cleanText(entry.gisPlatName) ||
+      cleanText(entry.gisNeighborhood) ||
+      cleanText(entry.gisPropId)
+    );
+  }
+
+  function gisInfoHtml(entry){
+    if(!hasGisInfo(entry)){
+      return `<div class="full-address">${escapeHtml(displayAddressMulti(entry.address || 'No address yet'))}</div>`;
+    }
+
+    const rows = [];
+    const site = officialStreetAddress(entry);
+    const cityZip = officialCityStateZip(entry);
+    const plat = cleanText(entry.gisPlatName);
+    const legal = cleanText(entry.gisLegalShort);
+    const neighborhood = cleanText(entry.gisNeighborhood);
+    const propId = cleanText(entry.gisPropId);
+
+    if(site || cityZip){
+      rows.push(`
+        <span class="gis-label">Site Address</span>
+        <span class="gis-value">${escapeHtml(site)}${cityZip ? '<br>' + escapeHtml(cityZip) : ''}</span>
+      `);
+    }
+
+    if(plat){
+      rows.push(`
+        <span class="gis-label">Community / Plat</span>
+        <span class="gis-value">${escapeHtml(plat)}</span>
+      `);
+    }
+
+    if(legal){
+      rows.push(`
+        <span class="gis-label">Abbreviated Description</span>
+        <span class="gis-value">${escapeHtml(legal)}</span>
+      `);
+    }
+
+    if(neighborhood){
+      rows.push(`
+        <span class="gis-label">Neighborhood Code</span>
+        <span class="gis-value">${escapeHtml(neighborhood)}</span>
+      `);
+    }
+
+    if(propId){
+      rows.push(`
+        <span class="gis-label">Property ID</span>
+        <span class="gis-value">${escapeHtml(propId)}</span>
+      `);
+    }
+
+    return `<div class="gis-info">${rows.join('')}</div>`;
+  }
+
   async function loadEntries(){
     const { data, error } = await supabaseClient
       .from(SUPABASE_TABLE)
@@ -1117,7 +1231,13 @@
       savedAt: row.created_at,
       emailSubject: row.email_subject || '',
       emailFrom: row.email_from || '',
-      emailBody: row.email_body || ''
+      emailBody: row.email_body || '',
+      gisSiteAddress: row.gis_site_address || '',
+      gisCityStateZip: row.gis_city_state_zip || '',
+      gisLegalShort: row.gis_legal_short || '',
+      gisPlatName: row.gis_plat_name || '',
+      gisNeighborhood: row.gis_neighborhood || '',
+      gisPropId: row.gis_prop_id || ''
     }));
   }
 
@@ -1337,6 +1457,99 @@
     return null;
   }
 
+  async function fetchClarkCountyGisByPoint(lat, lon){
+    if(lat == null || lon == null){
+      return null;
+    }
+
+    const url = new URL('https://gis.clark.wa.gov/arcgisfed/rest/services/ClarkView_Public/TaxlotsPublic/MapServer/0/query');
+    url.searchParams.set('f', 'json');
+    url.searchParams.set('geometry', `${lon},${lat}`);
+    url.searchParams.set('geometryType', 'esriGeometryPoint');
+    url.searchParams.set('inSR', '4326');
+    url.searchParams.set('spatialRel', 'esriSpatialRelIntersects');
+    url.searchParams.set('outFields', 'Prop_id,SitusAddrsFull,SitusCityStateZip,LegalShort,PlatName,NBRHD');
+    url.searchParams.set('returnGeometry', 'false');
+
+    try{
+      const resp = await fetch(url.toString());
+
+      if(!resp.ok){
+        return null;
+      }
+
+      const data = await resp.json();
+      const attrs = data?.features?.[0]?.attributes;
+
+      if(!attrs){
+        return null;
+      }
+
+      return {
+        gis_site_address: cleanText(attrs.SitusAddrsFull),
+        gis_city_state_zip: cleanText(attrs.SitusCityStateZip),
+        gis_legal_short: cleanText(attrs.LegalShort),
+        gis_plat_name: cleanText(attrs.PlatName),
+        gis_neighborhood: attrs.NBRHD == null ? '' : String(attrs.NBRHD),
+        gis_prop_id: attrs.Prop_id == null ? '' : String(attrs.Prop_id)
+      };
+    } catch(err){
+      console.log('Clark County GIS lookup failed:', err);
+      return null;
+    }
+  }
+
+  function addGisFieldsToRecord(record, gisInfo){
+    if(!gisInfo){
+      return record;
+    }
+
+    return {
+      ...record,
+      gis_site_address: gisInfo.gis_site_address || null,
+      gis_city_state_zip: gisInfo.gis_city_state_zip || null,
+      gis_legal_short: gisInfo.gis_legal_short || null,
+      gis_plat_name: gisInfo.gis_plat_name || null,
+      gis_neighborhood: gisInfo.gis_neighborhood || null,
+      gis_prop_id: gisInfo.gis_prop_id || null
+    };
+  }
+
+  async function backfillMissingGis(entries){
+    for(const entry of entries){
+      if(!entry.id || entry.lat == null || entry.lon == null || hasGisInfo(entry) || gisBackfillIds.has(entry.id)){
+        continue;
+      }
+
+      gisBackfillIds.add(entry.id);
+
+      try{
+        const gisInfo = await fetchClarkCountyGisByPoint(entry.lat, entry.lon);
+
+        if(!gisInfo){
+          continue;
+        }
+
+        const { error } = await supabaseClient
+          .from(SUPABASE_TABLE)
+          .update({
+            ...gisInfo,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', entry.id);
+
+        if(error){
+          console.error('GIS backfill failed:', error);
+          continue;
+        }
+
+        await renderLog(searchBox.value);
+      } catch(err){
+        console.log('GIS backfill error:', err);
+      }
+    }
+  }
+
   function openManualModal(entry){
     manualEditId = entry?.id || null;
     manualExistingPhotos = entry?.photos ? entry.photos.slice() : [];
@@ -1502,6 +1715,9 @@
         manualAddressStatus.textContent = 'Map lookup did not find it. Saving the address exactly as typed.';
       }
 
+      manualSaveBtn.textContent = 'Checking county property info...';
+      const gisInfo = await fetchClarkCountyGisByPoint(finalLat, finalLon);
+
       manualSaveBtn.textContent = 'Saving...';
 
       const caseId = manualEditId || crypto.randomUUID();
@@ -1511,7 +1727,7 @@
       const violationOnly = manualViolation.value.trim().replace(/^Possible violation:\s*/i, '');
       const noteText = violationOnly ? `Possible violation: ${violationOnly}` : '';
 
-      const record = {
+      let record = {
         id: caseId,
         address: finalAddress,
         lat: finalLat,
@@ -1522,6 +1738,8 @@
         photos: allPhotos,
         updated_at: new Date().toISOString()
       };
+
+      record = addGisFieldsToRecord(record, gisInfo);
 
       const { error } = await supabaseClient
         .from(SUPABASE_TABLE)
@@ -1555,6 +1773,7 @@
 
   async function renderLog(filter=''){
     const entries = await loadEntries();
+    backfillMissingGis(entries);
     const query = normalizeSearchText(filter);
 
     let filtered = query ? entries.filter(e => {
@@ -1562,6 +1781,10 @@
       const shortAddr = normalizeSearchText(shortAddress(e.address || ''));
       const prettyAddrSingle = normalizeSearchText(displayAddressSingle(e.address || ''));
       const prettyAddrMulti = normalizeSearchText(displayAddressMulti(e.address || ''));
+      const officialAddr = normalizeSearchText(officialDisplayAddress(e));
+      const gisLegal = normalizeSearchText(e.gisLegalShort || '');
+      const gisPlat = normalizeSearchText(e.gisPlatName || '');
+      const gisProp = normalizeSearchText(e.gisPropId || '');
       const note = normalizeSearchText(e.note || '');
       const emailBody = normalizeSearchText(e.emailBody || '');
 
@@ -1570,6 +1793,10 @@
         shortAddr.includes(query) ||
         prettyAddrSingle.includes(query) ||
         prettyAddrMulti.includes(query) ||
+        officialAddr.includes(query) ||
+        gisLegal.includes(query) ||
+        gisPlat.includes(query) ||
+        gisProp.includes(query) ||
         note.includes(query) ||
         emailBody.includes(query)
       );
@@ -1604,7 +1831,7 @@
       return `
         <div class="entry ${status} ${isOpen ? 'open-card' : ''}" data-id="${e.id}">
           <div class="case-summary" data-id="${e.id}">
-            <div class="addr">${escapeHtml(shortAddress(e.address || 'No address yet'))}</div>
+            <div class="addr">${escapeHtml(officialStreetAddress(e) || 'No address yet')}</div>
             <div class="open-toggle">${toggleSymbol}</div>
           </div>
 
@@ -1617,7 +1844,7 @@
               <div class="case-no">#${number}</div>
             </div>
 
-            <div class="full-address">${escapeHtml(displayAddressMulti(e.address || 'No address yet'))}</div>
+            ${gisInfoHtml(e)}
 
             <div class="note"><strong>Possible violation:</strong> ${escapeHtml(violationOnly)}</div>
 
@@ -1750,11 +1977,31 @@
   searchBox.addEventListener('input', ()=> renderLog(searchBox.value));
 
   function exportOneCase(e){
-    const rows = [['Address','Display Address','Latitude','Longitude','Photo Date','Status','Possible Violation','Saved At','Photo Count']];
+    const rows = [[
+      'Address',
+      'Official Site Address',
+      'Official City State ZIP',
+      'Community / Plat',
+      'Abbreviated Description',
+      'Neighborhood Code',
+      'Property ID',
+      'Latitude',
+      'Longitude',
+      'Photo Date',
+      'Status',
+      'Possible Violation',
+      'Saved At',
+      'Photo Count'
+    ]];
 
     rows.push([
       e.address || '',
-      displayAddressSingle(e.address || ''),
+      officialStreetAddress(e),
+      officialCityStateZip(e),
+      e.gisPlatName || '',
+      e.gisLegalShort || '',
+      e.gisNeighborhood || '',
+      e.gisPropId || '',
       e.lat || '',
       e.lon || '',
       e.capturedAt ? new Date(e.capturedAt).toLocaleString() : '',
@@ -1828,6 +2075,12 @@
             status: oldCase.status || 'open',
             note: violationOnly ? `Possible violation: ${violationOnly}` : '',
             photos,
+            gis_site_address: oldCase.gisSiteAddress || oldCase.gis_site_address || null,
+            gis_city_state_zip: oldCase.gisCityStateZip || oldCase.gis_city_state_zip || null,
+            gis_legal_short: oldCase.gisLegalShort || oldCase.gis_legal_short || null,
+            gis_plat_name: oldCase.gisPlatName || oldCase.gis_plat_name || null,
+            gis_neighborhood: oldCase.gisNeighborhood || oldCase.gis_neighborhood || null,
+            gis_prop_id: oldCase.gisPropId || oldCase.gis_prop_id || null,
             updated_at: new Date().toISOString()
           };
 
@@ -1934,7 +2187,7 @@
 
   if('serviceWorker' in navigator){
     window.addEventListener('load', ()=>{
-      navigator.serviceWorker.register('./sw.js').catch(err=>{
+      navigator.serviceWorker.register('./sw.js?v=gis1').catch(err=>{
         console.log('Service worker registration failed:', err);
       });
     });
