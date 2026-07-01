@@ -1458,47 +1458,54 @@
   }
 
   async function fetchClarkCountyGisByPoint(lat, lon){
-    if(lat == null || lon == null){
-      return null;
-    }
-
-    const url = new URL('https://gis.clark.wa.gov/arcgisfed/rest/services/ClarkView_Public/TaxlotsPublic/MapServer/0/query');
-    url.searchParams.set('f', 'json');
-    url.searchParams.set('geometry', `${lon},${lat}`);
-    url.searchParams.set('geometryType', 'esriGeometryPoint');
-    url.searchParams.set('inSR', '4326');
-    url.searchParams.set('spatialRel', 'esriSpatialRelIntersects');
-    url.searchParams.set('outFields', 'Prop_id,SitusAddrsFull,SitusCityStateZip,LegalShort,PlatName,NBRHD');
-    url.searchParams.set('returnGeometry', 'false');
-
-    try{
-      const resp = await fetch(url.toString());
-
-      if(!resp.ok){
-        return null;
-      }
-
-      const data = await resp.json();
-      const attrs = data?.features?.[0]?.attributes;
-
-      if(!attrs){
-        return null;
-      }
-
-      return {
-        gis_site_address: cleanText(attrs.SitusAddrsFull),
-        gis_city_state_zip: cleanText(attrs.SitusCityStateZip),
-        gis_legal_short: cleanText(attrs.LegalShort),
-        gis_plat_name: cleanText(attrs.PlatName),
-        gis_neighborhood: attrs.NBRHD == null ? '' : String(attrs.NBRHD),
-        gis_prop_id: attrs.Prop_id == null ? '' : String(attrs.Prop_id)
-      };
-    } catch(err){
-      console.log('Clark County GIS lookup failed:', err);
-      return null;
-    }
+  if(lat == null || lon == null){
+    return null;
   }
 
+  const url = new URL('https://gis.clark.wa.gov/arcgisfed/rest/services/ClarkView_Public/TaxlotsPublic/MapServer/0/query');
+
+  url.searchParams.set('f', 'json');
+  url.searchParams.set('where', '1=1');
+  url.searchParams.set('geometry', `${lon},${lat}`);
+  url.searchParams.set('geometryType', 'esriGeometryPoint');
+  url.searchParams.set('inSR', '4326');
+  url.searchParams.set('spatialRel', 'esriSpatialRelIntersects');
+
+  // This is the important fix.
+  // It searches nearby instead of only the exact GPS dot.
+  url.searchParams.set('distance', '100');
+  url.searchParams.set('units', 'esriSRUnit_Foot');
+
+  url.searchParams.set('outFields', 'Prop_id,SitusAddrsFull,SitusCityStateZip,LegalShort,PlatName,Nbrhd');
+  url.searchParams.set('returnGeometry', 'false');
+
+  try{
+    const resp = await fetch(url.toString());
+
+    if(!resp.ok){
+      return null;
+    }
+
+    const data = await resp.json();
+    const attrs = data?.features?.[0]?.attributes;
+
+    if(!attrs){
+      return null;
+    }
+
+    return {
+      gis_site_address: cleanText(attrs.SitusAddrsFull),
+      gis_city_state_zip: cleanText(attrs.SitusCityStateZip),
+      gis_legal_short: cleanText(attrs.LegalShort),
+      gis_plat_name: cleanText(attrs.PlatName),
+      gis_neighborhood: attrs.Nbrhd == null ? '' : String(attrs.Nbrhd),
+      gis_prop_id: attrs.Prop_id == null ? '' : String(attrs.Prop_id)
+    };
+  } catch(err){
+    console.log('Clark County GIS lookup failed:', err);
+    return null;
+  }
+}
   function addGisFieldsToRecord(record, gisInfo){
     if(!gisInfo){
       return record;
