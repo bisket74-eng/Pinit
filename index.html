@@ -1812,6 +1812,11 @@
   initPhotoViewer();
   renderLog();
   testSupabaseConnection();
+
+  setInterval(()=>{
+    renderLog(searchBox.value);
+  },30000);
+  
 })();
 </script>
 
