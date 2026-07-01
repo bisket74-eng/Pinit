@@ -691,13 +691,99 @@ let activeFilter = 'all';
     setTimeout(()=> toastEl.classList.remove('show'), 2400);
   }
 
-  function loadEntries(){
-    try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
-    catch(e){ return []; }
+ async function loadEntries(){
+  const { data, error } = await supabaseClient
+    .from(SUPABASE_TABLE)
+    .select('*')
+    .order('created_at', { ascending:false });
+
+  if(error){
+    console.error('Could not load Supabase cases:', error);
+    toast('Could not load cases');
+    return [];
   }
-  function saveEntries(entries){
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+
+  return (data || []).map(row => ({
+    id: row.id,
+    address: row.address,
+    lat: row.lat,
+    lon: row.lon,
+    capturedAt: row.captured_at,
+    note: row.note || row.email_body || '',
+    status: row.status || 'open',
+    photos: Array.isArray(row.photos) ? row.photos : [],
+    savedAt: row.created_at,
+    emailSubject: row.email_subject || '',
+    emailFrom: row.email_from || '',
+    emailBody: row.email_body || ''
+  }));
+}
+
+function dataUrlToBlob(dataUrl){
+  const parts = dataUrl.split(',');
+  const header = parts[0] || '';
+  const data = parts[1] || '';
+  const mime = (header.match(/data:(.*?);/) || [])[1] || 'image/jpeg';
+  const binary = atob(data);
+  const bytes = new Uint8Array(binary.length);
+
+  for(let i = 0; i < binary.length; i++){
+    bytes[i] = binary.charCodeAt(i);
   }
+
+  return new Blob([bytes], { type:mime });
+}
+
+function fileExtFromMime(mime){
+  if(mime === 'image/png') return 'png';
+  if(mime === 'image/webp') return 'webp';
+  if(mime === 'image/gif') return 'gif';
+  return 'jpg';
+}
+
+async function uploadPhotosForCase(photoSources, caseId){
+  const uploaded = [];
+
+  for(let i = 0; i < photoSources.length; i++){
+    const src = photoSources[i];
+
+    // Already uploaded photo URL from Supabase — keep it.
+    if(typeof src === 'string' && src.startsWith('http')){
+      uploaded.push(src);
+      continue;
+    }
+
+    // New local pasted/uploaded photo — upload it.
+    if(typeof src === 'string' && src.startsWith('data:image/')){
+      const blob = dataUrlToBlob(src);
+      const ext = fileExtFromMime(blob.type);
+      const path = `cases/${caseId}/${Date.now()}-${i}.${ext}`;
+
+      const { error } = await supabaseClient.storage
+        .from(SUPABASE_BUCKET)
+        .upload(path, blob, {
+          contentType: blob.type,
+          upsert: true
+        });
+
+      if(error){
+        console.error('Photo upload failed:', error);
+        toast('One photo did not upload');
+        continue;
+      }
+
+      const { data } = supabaseClient.storage
+        .from(SUPABASE_BUCKET)
+        .getPublicUrl(path);
+
+      if(data?.publicUrl){
+        uploaded.push(data.publicUrl);
+      }
+    }
+  }
+
+  return uploaded;
+}
 
   // ---------- File intake ----------
   dropzone.addEventListener('click', ()=> fileInput.click());
@@ -1058,132 +1144,183 @@ function cleanupViolationText(value){
     saveBtn.disabled = !current.address;
   }
 
-  saveBtn.addEventListener('click', ()=>{
-    if(!current.address) return;
-    const entries = loadEntries();
+  saveBtn.addEventListener('click', async ()=>{
+  if(!current.address) return;
+
+  const oldText = saveBtn.textContent;
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving...';
+
+  try{
+    const caseId = current.editId || crypto.randomUUID();
+    const photoSources = current.photos.map(p => p.dataUrl);
+    const photoUrls = await uploadPhotosForCase(photoSources, caseId);
+
     const record = {
-      id: current.editId || Date.now(),
+      id: caseId,
       address: current.address,
       lat: current.lat,
       lon: current.lon,
-      capturedAt: current.capturedAt,
+      captured_at: current.capturedAt ? new Date(current.capturedAt).toISOString() : null,
       note: noteField.value.trim(),
       status: current.status || 'open',
-      photos: current.photos.map(p=> p.dataUrl),
-      savedAt: current.editId ? (entries.find(e=>e.id===current.editId)?.savedAt || new Date().toISOString()) : new Date().toISOString()
+      photos: photoUrls,
+      updated_at: new Date().toISOString()
     };
-    if(current.editId){
-      const idx = entries.findIndex(e=> e.id === current.editId);
-      if(idx > -1) entries[idx] = record; else entries.unshift(record);
-      toast('Case updated');
-    } else {
-      entries.unshift(record);
-      toast('Saved to case log');
-    }
-    saveEntries(entries);
+
+    const { error } = await supabaseClient
+      .from(SUPABASE_TABLE)
+      .upsert(record, { onConflict:'id' });
+
+    if(error) throw error;
+
+    toast(current.editId ? 'Case updated in Supabase' : 'Saved to Supabase');
     resetStage();
-    renderLog(searchBox.value);
-  });
+    await renderLog(searchBox.value);
+  } catch(err){
+    console.error('Save failed:', err);
+    toast('Save failed — check Supabase');
+    saveBtn.disabled = false;
+    saveBtn.textContent = oldText;
+  }
+});
 
   // ---------- Edit existing entry ----------
-  function loadEntryForEdit(id){
-    const entries = loadEntries();
-    const e = entries.find(x=> x.id === id);
-    if(!e) return;
-    current = {
-      editId: e.id,
-      photos: e.photos.map(src=> ({ dataUrl: src, gps: (e.lat!=null ? {lat:e.lat, lon:e.lon} : null) })),
-      address: e.address,
-      lat: e.lat,
-      lon: e.lon,
-      capturedAt: e.capturedAt,
-      status: e.status || 'open'
-    };
-    staging.classList.add('active');
-    editBadge.style.display = 'inline-block';
-    noteField.value = e.note || '';
-    renderThumbs();
-    if(e.lat != null){ renderResult(); } else { renderNoGps(); }
-    saveBtn.disabled = false;
-    saveBtn.textContent = 'Update Case';
-    window.scrollTo({ top: staging.offsetTop - 20, behavior:'smooth' });
+  async function loadEntryForEdit(id){
+  const entries = await loadEntries();
+  const e = entries.find(x => x.id === id);
+  if(!e) return;
+
+  current = {
+    editId: e.id,
+    photos: (e.photos || []).map(src => ({
+      dataUrl: src,
+      gps: (e.lat != null ? { lat:e.lat, lon:e.lon } : null)
+    })),
+    address: e.address,
+    lat: e.lat,
+    lon: e.lon,
+    capturedAt: e.capturedAt,
+    status: e.status || 'open'
+  };
+
+  staging.classList.add('active');
+  editBadge.style.display = 'inline-block';
+  noteField.value = e.note || '';
+  renderThumbs();
+
+  if(e.lat != null){
+    renderResult();
+  } else {
+    renderNoGps();
   }
 
-  // ---------- Log ----------
-  pills.forEach(p=>{
-    p.addEventListener('click', ()=>{
-      pills.forEach(x=> x.classList.remove('active'));
-      p.classList.add('active');
-      activeFilter = p.dataset.filter;
-      renderLog(searchBox.value);
+  saveBtn.disabled = false;
+  saveBtn.textContent = 'Update Case';
+  window.scrollTo({ top: staging.offsetTop - 20, behavior:'smooth' });
+}
+
+ async function renderLog(filter=''){
+  const entries = await loadEntries();
+  const q = filter.trim().toLowerCase();
+
+  let filtered = q ? entries.filter(e =>
+    (e.address || '').toLowerCase().includes(q) ||
+    (e.note || '').toLowerCase().includes(q) ||
+    (e.emailBody || '').toLowerCase().includes(q)
+  ) : entries.slice();
+
+  if(activeFilter !== 'all'){
+    filtered = filtered.filter(e => (e.status || 'open') === activeFilter);
+  }
+
+  logCount.textContent = `${filtered.length} case${filtered.length===1?'':'s'}${q || activeFilter!=='all' ? ' (filtered)' : ''}`;
+
+  if(filtered.length === 0){
+    logList.innerHTML = `<div class="empty-log">No cases match here yet.</div>`;
+    return;
+  }
+
+  logList.innerHTML = filtered.map((e, index)=>{
+    const dateStr = e.capturedAt
+      ? new Date(e.capturedAt).toLocaleDateString()
+      : new Date(e.savedAt).toLocaleDateString();
+
+    const status = e.status || 'open';
+
+    return `
+    <div class="entry ${status}" data-id="${e.id}">
+      <div class="case-no">#${String(entries.length - index).padStart(3,'0')}</div>
+      <div class="badge ${status}">${status}</div>
+      <div class="addr">${escapeHtml(e.address || 'No address yet')}</div>
+      <div class="date">Photo date: ${dateStr}</div>
+      ${e.note ? `<div class="note">${escapeHtml(e.note)}</div>` : ''}
+      <div class="thumbrow">
+        ${(e.photos || []).map(src => `<div class="thumb"><img src="${src}"></div>`).join('')}
+      </div>
+      <div class="row-actions">
+        <span class="editbtn" data-id="${e.id}">Edit</span>
+        <span class="togglebtn" data-id="${e.id}" data-status="${status}">${status === 'open' ? 'Mark resolved' : 'Reopen'}</span>
+        ${e.lat != null ? `<span class="mapbtn" data-lat="${e.lat}" data-lon="${e.lon}">View map</span>` : ''}
+        <span class="del" data-id="${e.id}">Delete</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  logList.querySelectorAll('.editbtn').forEach(el=>{
+    el.addEventListener('click', ()=> loadEntryForEdit(el.dataset.id));
+  });
+
+  logList.querySelectorAll('.togglebtn').forEach(el=>{
+    el.addEventListener('click', async ()=>{
+      const id = el.dataset.id;
+      const oldStatus = el.dataset.status || 'open';
+      const newStatus = oldStatus === 'open' ? 'resolved' : 'open';
+
+      const { error } = await supabaseClient
+        .from(SUPABASE_TABLE)
+        .update({
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if(error){
+        console.error('Status update failed:', error);
+        toast('Could not update status');
+        return;
+      }
+
+      await renderLog(searchBox.value);
     });
   });
 
-  function renderLog(filter=''){
-    const entries = loadEntries();
-    const q = filter.trim().toLowerCase();
-    let filtered = q ? entries.filter(e=>
-      (e.address||'').toLowerCase().includes(q) || (e.note||'').toLowerCase().includes(q)
-    ) : entries.slice();
-
-    if(activeFilter !== 'all'){
-      filtered = filtered.filter(e=> (e.status||'open') === activeFilter);
-    }
-
-    logCount.textContent = `${filtered.length} case${filtered.length===1?'':'s'}${q || activeFilter!=='all' ? ' (filtered)' : ''}`;
-
-    if(filtered.length === 0){
-      logList.innerHTML = `<div class="empty-log">No cases match here yet.</div>`;
-      return;
-    }
-
-    logList.innerHTML = filtered.map((e)=>{
-      const dateStr = e.capturedAt ? new Date(e.capturedAt).toLocaleDateString() : new Date(e.savedAt).toLocaleDateString();
-      const status = e.status || 'open';
-      const posInAll = entries.findIndex(x=>x.id===e.id);
-      return `
-      <div class="entry ${status}" data-id="${e.id}">
-        <div class="case-no">#${String(entries.length - posInAll).padStart(3,'0')}</div>
-        <div class="badge ${status}">${status}</div>
-        <div class="addr">${e.address}</div>
-        <div class="date">Photo date: ${dateStr}</div>
-        ${e.note ? `<div class="note">${escapeHtml(e.note)}</div>` : ''}
-        <div class="thumbrow">
-          ${e.photos.map(src=> `<div class="thumb"><img src="${src}"></div>`).join('')}
-        </div>
-        <div class="row-actions">
-          <span class="editbtn" data-id="${e.id}">Edit</span>
-          <span class="togglebtn" data-id="${e.id}">${status === 'open' ? 'Mark resolved' : 'Reopen'}</span>
-          ${e.lat != null ? `<span class="mapbtn" data-lat="${e.lat}" data-lon="${e.lon}">View map</span>` : ''}
-          <span class="del" data-id="${e.id}">Delete</span>
-        </div>
-      </div>`;
-    }).join('');
-
-    logList.querySelectorAll('.editbtn').forEach(el=>{
-      el.addEventListener('click', ()=> loadEntryForEdit(+el.dataset.id));
+  logList.querySelectorAll('.mapbtn').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      window.open(`https://www.openstreetmap.org/?mlat=${el.dataset.lat}&mlon=${el.dataset.lon}#map=18/${el.dataset.lat}/${el.dataset.lon}`, '_blank');
     });
-    logList.querySelectorAll('.togglebtn').forEach(el=>{
-      el.addEventListener('click', ()=>{
-        const entries = loadEntries();
-        const e = entries.find(x=> x.id === +el.dataset.id);
-        if(e){ e.status = (e.status||'open') === 'open' ? 'resolved' : 'open'; saveEntries(entries); renderLog(searchBox.value); }
-      });
+  });
+
+  logList.querySelectorAll('.del').forEach(el=>{
+    el.addEventListener('click', async ()=>{
+      if(!confirm('Delete this case from the log?')) return;
+
+      const { error } = await supabaseClient
+        .from(SUPABASE_TABLE)
+        .delete()
+        .eq('id', el.dataset.id);
+
+      if(error){
+        console.error('Delete failed:', error);
+        toast('Could not delete case');
+        return;
+      }
+
+      toast('Case deleted');
+      await renderLog(searchBox.value);
     });
-    logList.querySelectorAll('.mapbtn').forEach(el=>{
-      el.addEventListener('click', ()=>{
-        window.open(`https://www.openstreetmap.org/?mlat=${el.dataset.lat}&mlon=${el.dataset.lon}#map=18/${el.dataset.lat}/${el.dataset.lon}`, '_blank');
-      });
-    });
-    logList.querySelectorAll('.del').forEach(el=>{
-      el.addEventListener('click', ()=>{
-        if(!confirm('Delete this case from the log?')) return;
-        const entries = loadEntries().filter(x=> x.id !== +el.dataset.id);
-        saveEntries(entries);
-        renderLog(searchBox.value);
-      });
-    });
-  }
+  });
+}
 
   function escapeHtml(s){
     const d = document.createElement('div');
@@ -1193,52 +1330,104 @@ function cleanupViolationText(value){
 
   searchBox.addEventListener('input', ()=> renderLog(searchBox.value));
 
-  exportCsvBtn.addEventListener('click', ()=>{
-    const entries = loadEntries();
-    if(entries.length === 0){ toast('No cases to export'); return; }
-    const rows = [['Address','Latitude','Longitude','Photo Date','Status','Note','Saved At']];
-    entries.forEach(e=>{
-      rows.push([
-        e.address, e.lat, e.lon,
-        e.capturedAt ? new Date(e.capturedAt).toLocaleString() : '',
-        e.status || 'open',
-        (e.note||'').replace(/\n/g,' '),
-        new Date(e.savedAt).toLocaleString()
-      ]);
-    });
-    const csv = rows.map(r=> r.map(v=> `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
-    downloadBlob(csv, 'text/csv', `case-log-${new Date().toISOString().slice(0,10)}.csv`);
+  exportCsvBtn.addEventListener('click', async ()=>{
+  const entries = await loadEntries();
+
+  if(entries.length === 0){
+    toast('No cases to export');
+    return;
+  }
+
+  const rows = [['Address','Latitude','Longitude','Photo Date','Status','Note','Saved At']];
+
+  entries.forEach(e=>{
+    rows.push([
+      e.address || '',
+      e.lat || '',
+      e.lon || '',
+      e.capturedAt ? new Date(e.capturedAt).toLocaleString() : '',
+      e.status || 'open',
+      (e.note || '').replace(/\n/g,' '),
+      e.savedAt ? new Date(e.savedAt).toLocaleString() : ''
+    ]);
   });
 
-  exportJsonBtn.addEventListener('click', ()=>{
-    const entries = loadEntries();
-    if(entries.length === 0){ toast('No cases to back up'); return; }
-    downloadBlob(JSON.stringify(entries, null, 2), 'application/json', `case-log-backup-${new Date().toISOString().slice(0,10)}.json`);
-    toast('Backup file saved');
-  });
+  const csv = rows
+    .map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(','))
+    .join('\n');
+
+  downloadBlob(csv, 'text/csv', `case-log-${new Date().toISOString().slice(0,10)}.csv`);
+});
+
+  exportJsonBtn.addEventListener('click', async ()=>{
+  const entries = await loadEntries();
+
+  if(entries.length === 0){
+    toast('No cases to back up');
+    return;
+  }
+
+  downloadBlob(JSON.stringify(entries, null, 2), 'application/json', `case-log-backup-${new Date().toISOString().slice(0,10)}.json`);
+  toast('Backup file saved');
+});
 
   importJsonBtn.addEventListener('click', ()=> importFile.click());
   importFile.addEventListener('change', e=>{
-    const file = e.target.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = ()=>{
-      try{
-        const data = JSON.parse(reader.result);
-        if(!Array.isArray(data)) throw new Error('bad format');
-        const existing = loadEntries();
-        const proceed = existing.length === 0 || confirm(`This will replace your current ${existing.length} case(s) with ${data.length} case(s) from the backup. Continue?`);
-        if(!proceed) return;
-        saveEntries(data);
-        renderLog();
-        toast('Backup restored');
-      } catch(err){
-        toast('Could not read that file — is it a Pin It backup?');
+  const file = e.target.files[0];
+  if(!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = async ()=>{
+    try{
+      const data = JSON.parse(reader.result);
+      if(!Array.isArray(data)) throw new Error('bad format');
+
+      const existing = await loadEntries();
+      const proceed = existing.length === 0 || confirm(`This will replace your current ${existing.length} case(s) with ${data.length} case(s) from the backup. Continue?`);
+      if(!proceed) return;
+
+      const { error: deleteError } = await supabaseClient
+        .from(SUPABASE_TABLE)
+        .delete()
+        .not('id', 'is', null);
+
+      if(deleteError) throw deleteError;
+
+      for(const oldCase of data){
+        const caseId = crypto.randomUUID();
+        const photos = await uploadPhotosForCase(oldCase.photos || [], caseId);
+
+        const record = {
+          id: caseId,
+          address: oldCase.address || '',
+          lat: oldCase.lat || null,
+          lon: oldCase.lon || null,
+          captured_at: oldCase.capturedAt ? new Date(oldCase.capturedAt).toISOString() : null,
+          status: oldCase.status || 'open',
+          note: oldCase.note || '',
+          photos,
+          updated_at: new Date().toISOString()
+        };
+
+        const { error } = await supabaseClient
+          .from(SUPABASE_TABLE)
+          .insert(record);
+
+        if(error) throw error;
       }
-    };
-    reader.readAsText(file);
-    importFile.value = '';
-  });
+
+      await renderLog();
+      toast('Backup restored to Supabase');
+    } catch(err){
+      console.error('Restore failed:', err);
+      toast('Could not restore backup');
+    }
+  };
+
+  reader.readAsText(file);
+  importFile.value = '';
+});
 
   function downloadBlob(content, type, filename){
     const blob = new Blob([content], {type});
