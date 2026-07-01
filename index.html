@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Case Locator — Violation Photo Lookup</title>
+<title>Pin It — Violation Photo Lookup</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Karla:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -449,7 +449,7 @@
 
 <header>
   <div class="eyebrow">HOA Field Reports</div>
-  <h1>Case Locator</h1>
+  <h1>Pin It</h1>
   <div class="subtitle">Drop a violation photo in. Get the address out.</div>
 </header>
 
@@ -619,16 +619,18 @@
       renderThumbs();
 
       try{
-        const exif = await exifr.parse(file, { gps:true, pick:['GPSLatitude','GPSLongitude','DateTimeOriginal','CreateDate'] });
-        if(exif && exif.latitude !== undefined && exif.longitude !== undefined){
-          photo.gps = { lat: exif.latitude, lon: exif.longitude };
-        } else if(exif && exif.GPSLatitude){
-          photo.gps = { lat: exif.GPSLatitude, lon: exif.GPSLongitude };
+        const gps = await exifr.gps(file);
+        if(gps && typeof gps.latitude === 'number' && typeof gps.longitude === 'number' && !isNaN(gps.latitude) && !isNaN(gps.longitude)){
+          photo.gps = { lat: gps.latitude, lon: gps.longitude };
         }
-        if(exif && (exif.DateTimeOriginal || exif.CreateDate)){
-          photo.date = exif.DateTimeOriginal || exif.CreateDate;
+      } catch(err){ /* no gps, that's fine */ }
+
+      try{
+        const meta = await exifr.parse(file, { pick:['DateTimeOriginal','CreateDate'] });
+        if(meta && (meta.DateTimeOriginal || meta.CreateDate)){
+          photo.date = meta.DateTimeOriginal || meta.CreateDate;
         }
-      } catch(err){ /* no exif, that's fine */ }
+      } catch(err){ /* no date, that's fine */ }
 
       renderThumbs();
 
@@ -708,7 +710,9 @@
         addr = null;
       }
     }
-    current.address = addr || `${current.lat.toFixed(6)}, ${current.lon.toFixed(6)} (address lookup failed)`;
+    const coordsValid = !isNaN(current.lat) && !isNaN(current.lon);
+    current.address = addr || (coordsValid ? `${current.lat.toFixed(6)}, ${current.lon.toFixed(6)} (address lookup failed)` : null);
+    if(!current.address){ renderNoGps(); return; }
     renderResult();
   }
 
@@ -929,7 +933,7 @@
         renderLog();
         toast('Backup restored');
       } catch(err){
-        toast('Could not read that file — is it a Case Locator backup?');
+        toast('Could not read that file — is it a Pin It backup?');
       }
     };
     reader.readAsText(file);
