@@ -69,6 +69,57 @@
     padding:22px 20px 60px;
   }
 
+  .emailpanel{
+    background:var(--card);
+    border:1px solid var(--rule);
+    border-radius:6px;
+    padding:18px;
+  }
+  .ep-label{
+    font-family:'Fraunces', Georgia, serif;
+    font-weight:600;
+    font-size:17px;
+    color:var(--ink);
+  }
+  .ep-hint{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin-top:5px;
+    line-height:1.6;
+    margin-bottom:12px;
+  }
+  .ep-hint kbd{
+    font-family:inherit;
+    background:var(--paper-dark);
+    border:1px solid var(--rule);
+    border-radius:4px;
+    padding:1px 6px;
+  }
+  .ep-box{
+    min-height:90px;
+    border:1.5px dashed var(--rule);
+    border-radius:6px;
+    padding:14px;
+    font-size:13.5px;
+    color:var(--ink);
+    background:#fff;
+    outline:none;
+    line-height:1.5;
+  }
+  .ep-box:focus{ border-color:var(--amber); }
+  .ep-box:empty::before{
+    content: attr(data-placeholder);
+    color:var(--ink-soft);
+  }
+  .ep-box img{ max-width:120px; max-height:120px; border-radius:4px; margin:4px 6px 4px 0; vertical-align:middle; }
+  .ep-status{
+    font-size:12.5px;
+    color:var(--sage-dark);
+    margin-top:10px;
+    display:none;
+  }
+  .ep-status.show{ display:block; }
+
   .dropzone{
     position:relative;
     border:1.5px dashed var(--rule);
@@ -450,16 +501,24 @@
 <header>
   <div class="eyebrow">HOA Field Reports</div>
   <h1>Pin It</h1>
-  <div class="subtitle">Drop a violation photo in. Get the address out.</div>
+  <div class="subtitle">Paste the email in. Get the address out.</div>
 </header>
 
 <main>
 
+  <div class="emailpanel" id="emailpanel">
+    <div class="ep-label">Paste the whole email</div>
+    <div class="ep-hint">In the email: <kbd>Ctrl</kbd>+<kbd>A</kbd> to select everything, <kbd>Ctrl</kbd>+<kbd>C</kbd> to copy. Then click below and <kbd>Ctrl</kbd>+<kbd>V</kbd>.</div>
+    <div class="ep-box" id="emailBox" contenteditable="true" data-placeholder="Paste email here..."></div>
+  </div>
+
+  <div class="stage-label">Or Just A Photo</div>
+
   <div class="dropzone" id="dropzone" tabindex="0">
     <div id="pasteFocus"></div>
     <span class="icon">✉ → 📍</span>
-    <div class="title">Drop photo, click to browse, or paste</div>
-    <div class="hint">Click here then <kbd>Ctrl</kbd>+<kbd>V</kbd> to paste a copied image · or drag from your email</div>
+    <div class="title">Drop a photo, click to browse, or paste</div>
+    <div class="hint">No email text needed here — just the picture itself</div>
     <input type="file" id="fileInput" accept="image/*" multiple>
   </div>
 
@@ -515,6 +574,7 @@
 (function(){
   const dropzone = document.getElementById('dropzone');
   const fileInput = document.getElementById('fileInput');
+  const emailBox = document.getElementById('emailBox');
   const staging = document.getElementById('staging');
   const editBadge = document.getElementById('editBadge');
   const thumbrow = document.getElementById('thumbrow');
@@ -588,6 +648,44 @@
     if(files.length) handleFiles(files);
   });
 
+  emailBox.addEventListener('paste', async e=>{
+    e.preventDefault();
+    e.stopPropagation();
+
+    const items = [...(e.clipboardData?.items || [])];
+    const imageFiles = items.filter(i=> i.kind === 'file' && i.type.startsWith('image/')).map(i=> i.getAsFile());
+    const plainText = e.clipboardData.getData('text/plain') || '';
+
+    emailBox.innerHTML = `Captured ${imageFiles.length} photo${imageFiles.length===1?'':'s'} and the email text. Scroll down to check the address.`;
+
+    staging.classList.add('active');
+
+    if(imageFiles.length){
+      await handleFiles(imageFiles);
+    }
+
+    // Only try text-based address guessing if photo GPS didn't already resolve one
+    if(!current.address){
+      const guess = guessAddressFromText(plainText);
+      if(guess){
+        const found = await forwardGeocode(guess);
+        if(found){
+          current.address = found.display_name || guess;
+          current.lat = found.lat;
+          current.lon = found.lon;
+          current.capturedAt = current.capturedAt || null;
+          renderResult();
+        } else {
+          renderNoGps(guess);
+        }
+      } else {
+        renderNoGps('');
+      }
+    }
+    saveBtn.disabled = !current.address;
+    window.scrollTo({ top: staging.offsetTop - 20, behavior:'smooth' });
+  });
+
   addMoreBtn.addEventListener('click', ()=> fileInput.click());
   clearBtn.addEventListener('click', resetStage);
 
@@ -608,6 +706,7 @@
     noteField.value = '';
     saveBtn.disabled = true;
     saveBtn.textContent = 'Save to Log';
+    emailBox.innerHTML = '';
   }
 
   async function handleFiles(files){
@@ -674,24 +773,80 @@
     });
   }
 
-  function renderNoGps(){
+  function renderNoGps(prefillAddr){
+    const prefill = prefillAddr !== undefined ? prefillAddr : (current.address || '');
     resultArea.innerHTML = `
       <div class="no-gps">
-        No location data found on ${current.photos.length > 1 ? 'these photos' : 'this photo'}.
+        No location data found on ${current.photos.length > 1 ? 'these photos' : (current.photos.length === 1 ? 'this photo' : 'this case')}.
         The image may have been screenshotted, forwarded through an app that strips metadata, or GPS tagging may be off on the sender's phone.
-        Try asking for the original photo file, or type the address in manually below.
+        Type or confirm the address below, then find it on the map.
       </div>
       <div class="addr-edit-row" style="margin-top:12px;">
-        <div class="result-address" id="manualAddr" contenteditable="true" data-placeholder="Type address here...">${current.address || ''}</div>
+        <div class="result-address" id="manualAddr" contenteditable="true" data-placeholder="Type address here...">${prefill}</div>
       </div>
+      <button class="ghost small" id="findOnMapBtn" style="margin-top:10px;">Find on Map</button>
+      <div class="ep-status" id="geoStatus"></div>
     `;
     const manualAddr = document.getElementById('manualAddr');
+    const geoStatus = document.getElementById('geoStatus');
     manualAddr.addEventListener('input', ()=>{
       current.address = manualAddr.textContent.trim() || null;
       saveBtn.disabled = !current.address;
     });
+    current.address = prefill.trim() || null;
+    saveBtn.disabled = !current.address;
+    document.getElementById('findOnMapBtn').addEventListener('click', async ()=>{
+      const text = manualAddr.textContent.trim();
+      if(!text){ return; }
+      geoStatus.textContent = 'Looking up map location…';
+      geoStatus.classList.add('show');
+      const found = await forwardGeocode(text);
+      if(found){
+        current.address = found.display_name || text;
+        current.lat = found.lat;
+        current.lon = found.lon;
+        renderResult();
+      } else {
+        geoStatus.textContent = "Couldn't find that on the map — the address will still be saved as typed.";
+      }
+    });
     statusRow.style.display = 'flex';
     renderStatus();
+  }
+
+  async function forwardGeocode(addressText){
+    try{
+      const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(addressText)}&limit=1&addressdetails=1`, {
+        headers: { 'Accept-Language': 'en' }
+      });
+      const data = await resp.json();
+      if(data && data[0]){
+        return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon), display_name: data[0].display_name };
+      }
+    } catch(e){ /* offline or blocked, fine */ }
+    return null;
+  }
+
+  // Rough address-shaped text finder: a street number + street words + common suffix,
+  // optionally followed by city/state/zip. Not perfect, always shown editable before saving.
+  function guessAddressFromText(text){
+    if(!text) return null;
+    const clean = text.replace(/\r/g,'');
+    const suffix = '(?:Street|St|Avenue|Ave|Boulevard|Blvd|Drive|Dr|Lane|Ln|Road|Rd|Court|Ct|Place|Pl|Way|Circle|Cir|Terrace|Ter|Parkway|Pkwy|Highway|Hwy|Trail|Trl|Loop|Square|Sq)\.?';
+    const streetRe = new RegExp('\\b(\\d{1,6}\\s+[A-Za-z0-9.\'\\-]+(?:\\s+[A-Za-z0-9.\'\\-]+){0,4}\\s+' + suffix + '\\b)', 'i');
+    const m = clean.match(streetRe);
+    if(!m) return null;
+    let result = m[1].trim();
+    const afterIdx = m.index + m[0].length;
+    const tail = clean.slice(afterIdx, afterIdx + 80);
+    const cityStateZip = tail.match(/^[,\s]+([A-Za-z .'\-]{2,30},?\s*[A-Z]{2}\s*\d{5}(-\d{4})?)/);
+    if(cityStateZip){
+      result += ', ' + cityStateZip[1].replace(/\s+,/, ',').trim();
+    } else {
+      const unit = tail.match(/^[,\s]*(Apt|Unit|#)\s*[\w-]+/i);
+      if(unit) result += ', ' + unit[0].trim();
+    }
+    return result;
   }
 
   async function resolveAddress(){
