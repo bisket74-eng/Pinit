@@ -154,6 +154,75 @@
     border-radius:4px;
     padding:1px 6px;
   }
+  .intake-panel{
+  background:var(--card);
+  border:1px solid var(--rule);
+  border-radius:6px;
+  padding:18px;
+}
+
+.split-intake{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  align-items:stretch;
+}
+
+.email-half,
+.photo-half{
+  min-height:145px;
+}
+
+.half-title{
+  font-size:12px;
+  font-weight:700;
+  color:var(--amber-dark);
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  margin-bottom:7px;
+}
+
+.email-half .ep-box{
+  min-height:112px;
+  height:112px;
+  overflow:auto;
+}
+
+.photo-half.dropzone{
+  padding:18px 12px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  min-height:145px;
+}
+
+.photo-half .icon{
+  font-size:24px;
+  margin-bottom:6px;
+}
+
+.photo-half .title{
+  font-size:14px;
+}
+
+.photo-half .hint{
+  font-size:12px;
+}
+
+@media (max-width:600px){
+  .split-intake{
+    grid-template-columns:1fr;
+  }
+
+  .email-half .ep-box{
+    min-height:105px;
+    height:105px;
+  }
+
+  .photo-half.dropzone{
+    min-height:110px;
+  }
+}
   input[type=file]{ display:none; }
   #pasteFocus{ position:absolute; inset:0; outline:none; }
 
@@ -346,6 +415,7 @@
     background:#fff;
     color:var(--ink);
   }
+  
   button.primary{
     background:var(--amber);
     border-color:var(--amber-dark);
@@ -507,20 +577,27 @@
 <main>
 
   <div class="emailpanel" id="emailpanel">
-    <div class="ep-label">Paste the whole email</div>
-    <div class="ep-hint">In the email: <kbd>Ctrl</kbd>+<kbd>A</kbd> to select everything, <kbd>Ctrl</kbd>+<kbd>C</kbd> to copy. Then click below and <kbd>Ctrl</kbd>+<kbd>V</kbd>.</div>
-    <div class="ep-box" id="emailBox" contenteditable="true" data-placeholder="Paste email here..."></div>
+   <div class="intake-panel" id="intakePanel">
+  <div class="ep-label">Add Email + Photos</div>
+  <div class="ep-hint">
+    Paste the whole email on the left. Drop, paste, or click to add photos on the right.
   </div>
 
-  <div class="stage-label">Or Just A Photo</div>
+  <div class="split-intake">
+    <div class="email-half">
+      <div class="half-title">Email contents</div>
+      <div class="ep-box" id="emailBox" contenteditable="true" data-placeholder="Paste email here..."></div>
+    </div>
 
-  <div class="dropzone" id="dropzone" tabindex="0">
-    <div id="pasteFocus"></div>
-    <span class="icon">✉ → 📍</span>
-    <div class="title">Drop a photo, click to browse, or paste</div>
-    <div class="hint">No email text needed here — just the picture itself</div>
-    <input type="file" id="fileInput" accept="image/*" multiple>
+    <div class="photo-half dropzone" id="dropzone" tabindex="0">
+      <div id="pasteFocus"></div>
+      <span class="icon">📷</span>
+      <div class="title">Drop or click</div>
+      <div class="hint">Add pictures here</div>
+      <input type="file" id="fileInput" accept="image/*" multiple>
+    </div>
   </div>
+</div>
 
   <div class="staging" id="staging">
     <div id="editBadge" class="edit-badge" style="display:none;">Editing saved case</div>
@@ -533,7 +610,7 @@
       <div class="status-choice resolved" id="statusResolvedBtn">Resolved</div>
     </div>
 
-    <textarea id="noteField" placeholder="Notes for this case (optional) — e.g. trash bins left out, unit B"></textarea>
+    <textarea id="noteField" placeholder="Violation / comments — auto-filled from email when possible, but you can edit it"></textarea>
 
     <div class="actions">
       <button class="primary" id="saveBtn" disabled>Save to Log</button>
@@ -654,11 +731,16 @@
 
     const items = [...(e.clipboardData?.items || [])];
     const imageFiles = items.filter(i=> i.kind === 'file' && i.type.startsWith('image/')).map(i=> i.getAsFile());
-    const plainText = e.clipboardData.getData('text/plain') || '';
+   const plainText = e.clipboardData.getData('text/plain') || '';
 
-    emailBox.innerHTML = `Captured ${imageFiles.length} photo${imageFiles.length===1?'':'s'} and the email text. Scroll down to check the address.`;
+const violationGuess = guessViolationFromText(plainText);
+if(violationGuess && !noteField.value.trim()){
+  noteField.value = violationGuess;
+}
 
-    staging.classList.add('active');
+emailBox.innerHTML = `Captured ${imageFiles.length} photo${imageFiles.length===1?'':'s'}, email text, and checked for address/violation details.`;
+
+staging.classList.add('active');
 
     if(imageFiles.length){
       await handleFiles(imageFiles);
@@ -829,6 +911,62 @@
 
   // Rough address-shaped text finder: a street number + street words + common suffix,
   // optionally followed by city/state/zip. Not perfect, always shown editable before saving.
+  function guessViolationFromText(text){
+  if(!text) return '';
+
+  const clean = text
+    .replace(/\r/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  const lines = clean
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean);
+
+  const labelPatterns = [
+    /^(violation|violation type|problem|issue|complaint|description|comments?|notes?|concern|reason)\s*[:\-]\s*(.+)$/i,
+    /^(reported issue|reported problem|hoa violation|community violation)\s*[:\-]\s*(.+)$/i
+  ];
+
+  for(const line of lines){
+    for(const re of labelPatterns){
+      const m = line.match(re);
+      if(m && m[2]){
+        return cleanupViolationText(m[2]);
+      }
+    }
+  }
+
+  const keywordRe = /\b(trash|garbage|bins?|can|parking|vehicle|car|trailer|rv|boat|yard|lawn|weeds?|grass|noise|pet|dog|fence|paint|roof|debris|junk|stored|storage|holiday|decorations?|sign|pool|gate|mailbox|violation|non[-\s]?compliance|complaint)\b/i;
+
+  const scored = lines
+    .filter(line =>
+      keywordRe.test(line) &&
+      !/@/.test(line) &&
+      line.length >= 12 &&
+      line.length <= 220
+    )
+    .map(line => cleanupViolationText(line));
+
+  if(scored.length){
+    return scored[0];
+  }
+
+  const subject = clean.match(/^subject\s*[:\-]\s*(.+)$/im);
+  if(subject && subject[1] && keywordRe.test(subject[1])){
+    return cleanupViolationText(subject[1]);
+  }
+
+  return '';
+}
+
+function cleanupViolationText(value){
+  return String(value || '')
+    .replace(/^["'“”]+|["'“”]+$/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
   function guessAddressFromText(text){
     if(!text) return null;
     const clean = text.replace(/\r/g,'');
