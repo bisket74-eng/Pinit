@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case Locator — Violation Photo Lookup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Karla:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.umd.min.js"></script>
+<style>
+  :root{
+    --paper:#EAE1D2;
+    --paper-dark:#DCCFB7;
+    --card:#FBF7EF;
+    --ink:#3A3128;
+    --ink-soft:#7C7060;
+    --rule:#CCBEA3;
+    --amber:#B07A32;
+    --amber-dark:#8C5F26;
+    --sage:#767D5F;
+    --sage-dark:#5C6249;
+    --rust:#A85338;
+    --line-link:#5C6E63;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    background-image: radial-gradient(circle at 1px 1px, rgba(58,49,40,0.05) 1px, transparent 0);
+    background-size:24px 24px;
+    color:var(--ink);
+    font-family:'Karla', Arial, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .serif{ font-family:'Fraunces', Georgia, serif; }
+
+  header{
+    padding:28px 20px 18px;
+    border-bottom:1px solid var(--rule);
+    max-width:780px;
+    margin:0 auto;
+  }
+  .eyebrow{
+    font-size:11px;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--amber-dark);
+    font-weight:700;
+    margin-bottom:6px;
+  }
+  h1{
+    margin:0;
+    font-family:'Fraunces', Georgia, serif;
+    font-weight:600;
+    font-size:30px;
+    letter-spacing:.005em;
+    color:var(--ink);
+  }
+  .subtitle{
+    color:var(--ink-soft);
+    font-size:14px;
+    margin-top:6px;
+  }
+
+  main{
+    max-width:780px;
+    margin:0 auto;
+    padding:22px 20px 60px;
+  }
+
+  .dropzone{
+    position:relative;
+    border:1.5px dashed var(--rule);
+    background:var(--card);
+    border-radius:6px;
+    padding:36px 18px;
+    text-align:center;
+    cursor:pointer;
+    transition:border-color .15s, background .15s;
+  }
+  .dropzone.drag{
+    border-color:var(--amber);
+    background:#FFFBF2;
+  }
+  .dropzone .icon{
+    font-size:26px;
+    margin-bottom:10px;
+    display:block;
+    opacity:.85;
+  }
+  .dropzone .title{ font-size:15px; font-weight:600; color:var(--ink); }
+  .dropzone .hint{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin-top:7px;
+    line-height:1.6;
+  }
+  .dropzone .hint kbd{
+    font-family:inherit;
+    background:var(--paper-dark);
+    border:1px solid var(--rule);
+    border-radius:4px;
+    padding:1px 6px;
+  }
+  input[type=file]{ display:none; }
+  #pasteFocus{ position:absolute; inset:0; outline:none; }
+
+  .stage-label{
+    font-size:11.5px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin:30px 0 10px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-weight:600;
+  }
+  .stage-label::after{
+    content:"";
+    flex:1;
+    border-top:1px solid var(--rule);
+  }
+
+  .staging{
+    display:none;
+    background:var(--card);
+    border:1px solid var(--rule);
+    border-radius:6px;
+    padding:18px;
+  }
+  .staging.active{ display:block; }
+  .edit-badge{
+    display:inline-block;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--amber-dark);
+    background:#F3E4C8;
+    padding:3px 9px;
+    border-radius:20px;
+    margin-bottom:12px;
+  }
+
+  .thumbrow{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .thumb{
+    position:relative;
+    width:76px;
+    height:76px;
+    border:1px solid var(--rule);
+    background:#fff;
+    overflow:hidden;
+    border-radius:5px;
+  }
+  .thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .thumb .rm{
+    position:absolute;
+    top:0; right:0;
+    background:rgba(58,49,40,.72);
+    color:#fff;
+    width:20px; height:20px;
+    line-height:20px;
+    text-align:center;
+    font-size:13px;
+    cursor:pointer;
+  }
+  .thumb .tag{
+    position:absolute;
+    bottom:0; left:0; right:0;
+    font-size:9px;
+    text-align:center;
+    padding:2px 0;
+    color:#fff;
+    letter-spacing:.04em;
+  }
+  .thumb .tag.ok{ background:var(--sage); }
+  .thumb .tag.no{ background:var(--rust); }
+
+  .result-block{
+    border-top:1px dashed var(--rule);
+    padding-top:16px;
+    margin-top:6px;
+  }
+  .addr-edit-row{
+    display:flex;
+    align-items:flex-start;
+    gap:8px;
+  }
+  .result-address{
+    font-family:'Fraunces', Georgia, serif;
+    font-size:20px;
+    font-weight:600;
+    color:var(--ink);
+    line-height:1.4;
+    flex:1;
+  }
+  .result-address[contenteditable="true"]{
+    outline:none;
+    border-bottom:1px dashed var(--amber);
+    padding-bottom:2px;
+  }
+  .edit-addr-btn{
+    font-size:11px;
+    color:var(--line-link);
+    cursor:pointer;
+    white-space:nowrap;
+    padding-top:5px;
+  }
+  .result-meta{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin-top:5px;
+  }
+  .no-gps{
+    background:#F3E5DD;
+    border:1px solid var(--rust);
+    color:#7E3E28;
+    padding:11px 13px;
+    font-size:13px;
+    border-radius:5px;
+    margin-top:6px;
+    line-height:1.5;
+  }
+  .map-embed{
+    margin-top:13px;
+    border:1px solid var(--rule);
+    border-radius:5px;
+    overflow:hidden;
+  }
+  .map-embed iframe{ width:100%; height:220px; border:0; display:block; }
+  .map-link{
+    display:inline-block;
+    font-size:11.5px;
+    margin-top:7px;
+    color:var(--line-link);
+  }
+
+  .status-row{
+    display:flex;
+    gap:8px;
+    margin-top:16px;
+  }
+  .status-choice{
+    flex:1;
+    text-align:center;
+    padding:8px;
+    border:1px solid var(--rule);
+    border-radius:5px;
+    font-size:12.5px;
+    font-weight:600;
+    cursor:pointer;
+    color:var(--ink-soft);
+    background:#fff;
+    letter-spacing:.03em;
+  }
+  .status-choice.active.open{ background:#F3E5DD; border-color:var(--rust); color:#7E3E28; }
+  .status-choice.active.resolved{ background:#E7EADE; border-color:var(--sage-dark); color:var(--sage-dark); }
+
+  textarea{
+    width:100%;
+    margin-top:14px;
+    font-family:'Karla', Arial, sans-serif;
+    font-size:13.5px;
+    padding:9px 10px;
+    border:1px solid var(--rule);
+    border-radius:5px;
+    background:#fff;
+    resize:vertical;
+    min-height:52px;
+  }
+  textarea:focus, .result-address:focus{ border-color:var(--amber); }
+
+  .actions{
+    display:flex;
+    gap:10px;
+    margin-top:16px;
+    flex-wrap:wrap;
+  }
+  button{
+    font-family:'Karla', Arial, sans-serif;
+    font-size:13px;
+    font-weight:600;
+    letter-spacing:.02em;
+    padding:10px 18px;
+    border-radius:5px;
+    cursor:pointer;
+    border:1px solid var(--rule);
+    background:#fff;
+    color:var(--ink);
+  }
+  button.primary{
+    background:var(--amber);
+    border-color:var(--amber-dark);
+    color:#fff;
+  }
+  button.primary:disabled{
+    background:#D8C7A6;
+    border-color:#D8C7A6;
+    cursor:not-allowed;
+  }
+  button:hover:not(:disabled){ filter:brightness(0.97); }
+  button.ghost{ background:transparent; color:var(--ink-soft); }
+  button.small{ padding:6px 12px; font-size:12px; }
+
+  /* LOG */
+  .log-toolbar{
+    display:flex;
+    gap:8px;
+    margin-bottom:10px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+  .log-toolbar input[type=search]{
+    flex:1;
+    min-width:140px;
+    font-family:inherit;
+    font-size:13px;
+    padding:9px 11px;
+    border:1px solid var(--rule);
+    border-radius:5px;
+    background:var(--card);
+  }
+  .filter-pills{
+    display:flex;
+    gap:6px;
+    margin-bottom:14px;
+  }
+  .pill{
+    font-size:11.5px;
+    font-weight:600;
+    padding:5px 12px;
+    border-radius:20px;
+    border:1px solid var(--rule);
+    background:var(--card);
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .pill.active{
+    background:var(--amber);
+    border-color:var(--amber-dark);
+    color:#fff;
+  }
+  .log-count{ font-size:11.5px; color:var(--ink-soft); margin-bottom:10px; }
+
+  .entry{
+    background:var(--card);
+    border:1px solid var(--rule);
+    border-left:4px solid var(--rust);
+    border-radius:6px;
+    padding:15px 17px;
+    margin-bottom:11px;
+    position:relative;
+  }
+  .entry.resolved{ border-left-color:var(--sage-dark); opacity:.82; }
+  .entry .case-no{
+    position:absolute;
+    top:12px; right:15px;
+    font-size:10.5px;
+    color:var(--ink-soft);
+    letter-spacing:.08em;
+  }
+  .entry .badge{
+    display:inline-block;
+    font-size:9.5px;
+    font-weight:700;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    padding:2px 8px;
+    border-radius:20px;
+    margin-bottom:6px;
+  }
+  .entry .badge.open{ background:#F3E5DD; color:#7E3E28; }
+  .entry .badge.resolved{ background:#E7EADE; color:var(--sage-dark); }
+  .entry .addr{
+    font-family:'Fraunces', Georgia, serif;
+    font-weight:600;
+    font-size:16.5px;
+    padding-right:70px;
+  }
+  .entry .date{ font-size:11.5px; color:var(--ink-soft); margin-top:3px; }
+  .entry .note{ font-size:13px; margin-top:9px; color:var(--ink); white-space:pre-wrap; }
+  .entry .thumbrow{ margin-top:11px; margin-bottom:0; }
+  .entry .thumb{ width:54px; height:54px; }
+  .entry .row-actions{ margin-top:11px; display:flex; gap:16px; flex-wrap:wrap; }
+  .entry .row-actions span{
+    font-size:11.5px;
+    color:var(--line-link);
+    cursor:pointer;
+    letter-spacing:.02em;
+    font-weight:600;
+  }
+  .entry .row-actions span.del{ color:var(--rust); }
+
+  .empty-log{
+    text-align:center;
+    color:var(--ink-soft);
+    font-size:13px;
+    padding:34px 10px;
+    border:1px dashed var(--rule);
+    border-radius:6px;
+  }
+
+  .backup-panel{
+    margin-top:34px;
+    border-top:1px solid var(--rule);
+    padding-top:16px;
+  }
+  .backup-panel .stage-label{ margin-top:0; }
+  .backup-row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .backup-note{
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-top:8px;
+    line-height:1.6;
+  }
+  #importFile{ display:none; }
+
+  .toast{
+    position:fixed;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%) translateY(10px);
+    background:var(--ink);
+    color:#fff;
+    padding:10px 20px;
+    border-radius:6px;
+    font-size:12.5px;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s, transform .2s;
+    z-index:50;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  @media (max-width:480px){
+    h1{ font-size:25px; }
+    .dropzone{ padding:28px 12px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">HOA Field Reports</div>
+  <h1>Case Locator</h1>
+  <div class="subtitle">Drop a violation photo in. Get the address out.</div>
+</header>
+
+<main>
+
+  <div class="dropzone" id="dropzone" tabindex="0">
+    <div id="pasteFocus"></div>
+    <span class="icon">✉ → 📍</span>
+    <div class="title">Drop photo, click to browse, or paste</div>
+    <div class="hint">Click here then <kbd>Ctrl</kbd>+<kbd>V</kbd> to paste a copied image · or drag from your email</div>
+    <input type="file" id="fileInput" accept="image/*" multiple>
+  </div>
+
+  <div class="staging" id="staging">
+    <div id="editBadge" class="edit-badge" style="display:none;">Editing saved case</div>
+    <div class="thumbrow" id="thumbrow"></div>
+
+    <div id="resultArea"></div>
+
+    <div class="status-row" id="statusRow" style="display:none;">
+      <div class="status-choice open" id="statusOpenBtn">Open</div>
+      <div class="status-choice resolved" id="statusResolvedBtn">Resolved</div>
+    </div>
+
+    <textarea id="noteField" placeholder="Notes for this case (optional) — e.g. trash bins left out, unit B"></textarea>
+
+    <div class="actions">
+      <button class="primary" id="saveBtn" disabled>Save to Log</button>
+      <button class="ghost" id="addMoreBtn">Add Another Photo</button>
+      <button class="ghost" id="clearBtn">Discard</button>
+    </div>
+  </div>
+
+  <div class="stage-label">Case Log</div>
+
+  <div class="log-toolbar">
+    <input type="search" id="searchBox" placeholder="Search address or notes...">
+    <button class="ghost small" id="exportCsvBtn">Export CSV</button>
+  </div>
+  <div class="filter-pills">
+    <div class="pill active" data-filter="all">All</div>
+    <div class="pill" data-filter="open">Open</div>
+    <div class="pill" data-filter="resolved">Resolved</div>
+  </div>
+  <div class="log-count" id="logCount"></div>
+  <div id="logList"></div>
+
+  <div class="backup-panel">
+    <div class="stage-label">Backup &amp; Restore</div>
+    <div class="backup-row">
+      <button class="ghost small" id="exportJsonBtn">Save Backup File</button>
+      <button class="ghost small" id="importJsonBtn">Restore From Backup</button>
+      <input type="file" id="importFile" accept="application/json">
+    </div>
+    <div class="backup-note">Backups are saved as a single file with every case and photo included. If this browser's data ever gets cleared, restoring a backup brings everything back. Worth doing this every so often — restoring replaces the current log, so keep the most recent file.</div>
+  </div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('fileInput');
+  const staging = document.getElementById('staging');
+  const editBadge = document.getElementById('editBadge');
+  const thumbrow = document.getElementById('thumbrow');
+  const resultArea = document.getElementById('resultArea');
+  const statusRow = document.getElementById('statusRow');
+  const statusOpenBtn = document.getElementById('statusOpenBtn');
+  const statusResolvedBtn = document.getElementById('statusResolvedBtn');
+  const noteField = document.getElementById('noteField');
+  const saveBtn = document.getElementById('saveBtn');
+  const addMoreBtn = document.getElementById('addMoreBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const logList = document.getElementById('logList');
+  const logCount = document.getElementById('logCount');
+  const searchBox = document.getElementById('searchBox');
+  const exportCsvBtn = document.getElementById('exportCsvBtn');
+  const exportJsonBtn = document.getElementById('exportJsonBtn');
+  const importJsonBtn = document.getElementById('importJsonBtn');
+  const importFile = document.getElementById('importFile');
+  const toastEl = document.getElementById('toast');
+  const pills = document.querySelectorAll('.pill');
+
+  const STORAGE_KEY = 'caseLocatorEntries';
+  let current = { editId:null, photos: [], address: null, lat: null, lon: null, capturedAt: null, status:'open' };
+  let geocodeCache = {};
+  let activeFilter = 'all';
+
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    setTimeout(()=> toastEl.classList.remove('show'), 2400);
+  }
+
+  function loadEntries(){
+    try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+    catch(e){ return []; }
+  }
+  function saveEntries(entries){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+  }
+
+  // ---------- File intake ----------
+  dropzone.addEventListener('click', ()=> fileInput.click());
+  dropzone.addEventListener('keydown', e=>{ if(e.key==='Enter') fileInput.click(); });
+
+  ['dragenter','dragover'].forEach(ev=>{
+    dropzone.addEventListener(ev, e=>{
+      e.preventDefault(); e.stopPropagation();
+      dropzone.classList.add('drag');
+    });
+  });
+  ['dragleave','drop'].forEach(ev=>{
+    dropzone.addEventListener(ev, e=>{
+      e.preventDefault(); e.stopPropagation();
+      dropzone.classList.remove('drag');
+    });
+  });
+  dropzone.addEventListener('drop', e=>{
+    const files = [...e.dataTransfer.files].filter(f=> f.type.startsWith('image/'));
+    if(files.length) handleFiles(files);
+  });
+
+  fileInput.addEventListener('change', e=>{
+    const files = [...e.target.files];
+    if(files.length) handleFiles(files);
+    fileInput.value = '';
+  });
+
+  document.addEventListener('paste', e=>{
+    const items = [...(e.clipboardData?.items || [])];
+    const files = items.filter(i=> i.type.startsWith('image/')).map(i=> i.getAsFile());
+    if(files.length) handleFiles(files);
+  });
+
+  addMoreBtn.addEventListener('click', ()=> fileInput.click());
+  clearBtn.addEventListener('click', resetStage);
+
+  statusOpenBtn.addEventListener('click', ()=>{ current.status='open'; renderStatus(); });
+  statusResolvedBtn.addEventListener('click', ()=>{ current.status='resolved'; renderStatus(); });
+  function renderStatus(){
+    statusOpenBtn.classList.toggle('active', current.status==='open');
+    statusResolvedBtn.classList.toggle('active', current.status==='resolved');
+  }
+
+  function resetStage(){
+    current = { editId:null, photos: [], address: null, lat: null, lon: null, capturedAt: null, status:'open' };
+    staging.classList.remove('active');
+    editBadge.style.display = 'none';
+    thumbrow.innerHTML = '';
+    resultArea.innerHTML = '';
+    statusRow.style.display = 'none';
+    noteField.value = '';
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Save to Log';
+  }
+
+  async function handleFiles(files){
+    staging.classList.add('active');
+    for(const file of files){
+      const dataUrl = await fileToDataUrl(file);
+      const photo = { dataUrl, name: file.name, gps:null, date:null };
+      current.photos.push(photo);
+      renderThumbs();
+
+      try{
+        const exif = await exifr.parse(file, { gps:true, pick:['GPSLatitude','GPSLongitude','DateTimeOriginal','CreateDate'] });
+        if(exif && exif.latitude !== undefined && exif.longitude !== undefined){
+          photo.gps = { lat: exif.latitude, lon: exif.longitude };
+        } else if(exif && exif.GPSLatitude){
+          photo.gps = { lat: exif.GPSLatitude, lon: exif.GPSLongitude };
+        }
+        if(exif && (exif.DateTimeOriginal || exif.CreateDate)){
+          photo.date = exif.DateTimeOriginal || exif.CreateDate;
+        }
+      } catch(err){ /* no exif, that's fine */ }
+
+      renderThumbs();
+
+      if(photo.gps && !current.lat){
+        current.lat = photo.gps.lat;
+        current.lon = photo.gps.lon;
+        current.capturedAt = photo.date;
+        await resolveAddress();
+      }
+    }
+    if(!current.lat && !current.address){
+      renderNoGps();
+    }
+    saveBtn.disabled = !current.address;
+  }
+
+  function fileToDataUrl(file){
+    return new Promise((res,rej)=>{
+      const r = new FileReader();
+      r.onload = ()=> res(r.result);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+  }
+
+  function renderThumbs(){
+    thumbrow.innerHTML = current.photos.map((p, i)=> `
+      <div class="thumb">
+        <img src="${p.dataUrl}" alt="photo">
+        <div class="rm" data-i="${i}">×</div>
+        ${p.gps ? '<div class="tag ok">GPS ✓</div>' : '<div class="tag no">no GPS</div>'}
+      </div>
+    `).join('');
+    thumbrow.querySelectorAll('.rm').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const i = +btn.dataset.i;
+        current.photos.splice(i,1);
+        renderThumbs();
+        if(current.photos.length === 0 && !current.editId) resetStage();
+      });
+    });
+  }
+
+  function renderNoGps(){
+    resultArea.innerHTML = `
+      <div class="no-gps">
+        No location data found on ${current.photos.length > 1 ? 'these photos' : 'this photo'}.
+        The image may have been screenshotted, forwarded through an app that strips metadata, or GPS tagging may be off on the sender's phone.
+        Try asking for the original photo file, or type the address in manually below.
+      </div>
+      <div class="addr-edit-row" style="margin-top:12px;">
+        <div class="result-address" id="manualAddr" contenteditable="true" data-placeholder="Type address here...">${current.address || ''}</div>
+      </div>
+    `;
+    const manualAddr = document.getElementById('manualAddr');
+    manualAddr.addEventListener('input', ()=>{
+      current.address = manualAddr.textContent.trim() || null;
+      saveBtn.disabled = !current.address;
+    });
+    statusRow.style.display = 'flex';
+    renderStatus();
+  }
+
+  async function resolveAddress(){
+    resultArea.innerHTML = `<div class="result-block" style="color:var(--ink-soft); font-size:13px;">Looking up address…</div>`;
+    const key = current.lat.toFixed(5) + ',' + current.lon.toFixed(5);
+    let addr = geocodeCache[key];
+    if(!addr){
+      try{
+        const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${current.lat}&lon=${current.lon}&zoom=18&addressdetails=1`, {
+          headers: { 'Accept-Language': 'en' }
+        });
+        const data = await resp.json();
+        addr = data.display_name || null;
+        geocodeCache[key] = addr;
+      } catch(e){
+        addr = null;
+      }
+    }
+    current.address = addr || `${current.lat.toFixed(6)}, ${current.lon.toFixed(6)} (address lookup failed)`;
+    renderResult();
+  }
+
+  function renderResult(){
+    const dateStr = current.capturedAt ? new Date(current.capturedAt).toLocaleString() : null;
+    const hasCoords = current.lat !== null && current.lat !== undefined;
+    resultArea.innerHTML = `
+      <div class="result-block">
+        <div class="addr-edit-row">
+          <div class="result-address" id="addrText" contenteditable="false">${current.address}</div>
+          <span class="edit-addr-btn" id="editAddrBtn">Edit</span>
+        </div>
+        <div class="result-meta">
+          ${dateStr ? 'Photo taken: ' + dateStr + ' · ' : ''}
+          ${hasCoords ? current.lat.toFixed(6) + ', ' + current.lon.toFixed(6) : 'no coordinates'}
+        </div>
+        ${hasCoords ? `
+        <div class="map-embed">
+          <iframe loading="lazy"
+            src="https://www.openstreetmap.org/export/embed.html?bbox=${current.lon-0.003}%2C${current.lat-0.002}%2C${current.lon+0.003}%2C${current.lat+0.002}&layer=mapnik&marker=${current.lat}%2C${current.lon}">
+          </iframe>
+        </div>
+        <a class="map-link" target="_blank" rel="noopener"
+           href="https://www.openstreetmap.org/?mlat=${current.lat}&mlon=${current.lon}#map=18/${current.lat}/${current.lon}">
+           Open full map ↗
+        </a>` : ''}
+      </div>
+    `;
+    const addrText = document.getElementById('addrText');
+    document.getElementById('editAddrBtn').addEventListener('click', ()=>{
+      const editing = addrText.getAttribute('contenteditable') === 'true';
+      addrText.setAttribute('contenteditable', editing ? 'false' : 'true');
+      document.getElementById('editAddrBtn').textContent = editing ? 'Edit' : 'Done';
+      if(!editing) addrText.focus();
+      else { current.address = addrText.textContent.trim(); }
+    });
+    addrText.addEventListener('input', ()=>{
+      current.address = addrText.textContent.trim();
+      saveBtn.disabled = !current.address;
+    });
+    statusRow.style.display = 'flex';
+    renderStatus();
+    saveBtn.disabled = !current.address;
+  }
+
+  saveBtn.addEventListener('click', ()=>{
+    if(!current.address) return;
+    const entries = loadEntries();
+    const record = {
+      id: current.editId || Date.now(),
+      address: current.address,
+      lat: current.lat,
+      lon: current.lon,
+      capturedAt: current.capturedAt,
+      note: noteField.value.trim(),
+      status: current.status || 'open',
+      photos: current.photos.map(p=> p.dataUrl),
+      savedAt: current.editId ? (entries.find(e=>e.id===current.editId)?.savedAt || new Date().toISOString()) : new Date().toISOString()
+    };
+    if(current.editId){
+      const idx = entries.findIndex(e=> e.id === current.editId);
+      if(idx > -1) entries[idx] = record; else entries.unshift(record);
+      toast('Case updated');
+    } else {
+      entries.unshift(record);
+      toast('Saved to case log');
+    }
+    saveEntries(entries);
+    resetStage();
+    renderLog(searchBox.value);
+  });
+
+  // ---------- Edit existing entry ----------
+  function loadEntryForEdit(id){
+    const entries = loadEntries();
+    const e = entries.find(x=> x.id === id);
+    if(!e) return;
+    current = {
+      editId: e.id,
+      photos: e.photos.map(src=> ({ dataUrl: src, gps: (e.lat!=null ? {lat:e.lat, lon:e.lon} : null) })),
+      address: e.address,
+      lat: e.lat,
+      lon: e.lon,
+      capturedAt: e.capturedAt,
+      status: e.status || 'open'
+    };
+    staging.classList.add('active');
+    editBadge.style.display = 'inline-block';
+    noteField.value = e.note || '';
+    renderThumbs();
+    if(e.lat != null){ renderResult(); } else { renderNoGps(); }
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Update Case';
+    window.scrollTo({ top: staging.offsetTop - 20, behavior:'smooth' });
+  }
+
+  // ---------- Log ----------
+  pills.forEach(p=>{
+    p.addEventListener('click', ()=>{
+      pills.forEach(x=> x.classList.remove('active'));
+      p.classList.add('active');
+      activeFilter = p.dataset.filter;
+      renderLog(searchBox.value);
+    });
+  });
+
+  function renderLog(filter=''){
+    const entries = loadEntries();
+    const q = filter.trim().toLowerCase();
+    let filtered = q ? entries.filter(e=>
+      (e.address||'').toLowerCase().includes(q) || (e.note||'').toLowerCase().includes(q)
+    ) : entries.slice();
+
+    if(activeFilter !== 'all'){
+      filtered = filtered.filter(e=> (e.status||'open') === activeFilter);
+    }
+
+    logCount.textContent = `${filtered.length} case${filtered.length===1?'':'s'}${q || activeFilter!=='all' ? ' (filtered)' : ''}`;
+
+    if(filtered.length === 0){
+      logList.innerHTML = `<div class="empty-log">No cases match here yet.</div>`;
+      return;
+    }
+
+    logList.innerHTML = filtered.map((e)=>{
+      const dateStr = e.capturedAt ? new Date(e.capturedAt).toLocaleDateString() : new Date(e.savedAt).toLocaleDateString();
+      const status = e.status || 'open';
+      const posInAll = entries.findIndex(x=>x.id===e.id);
+      return `
+      <div class="entry ${status}" data-id="${e.id}">
+        <div class="case-no">#${String(entries.length - posInAll).padStart(3,'0')}</div>
+        <div class="badge ${status}">${status}</div>
+        <div class="addr">${e.address}</div>
+        <div class="date">Photo date: ${dateStr}</div>
+        ${e.note ? `<div class="note">${escapeHtml(e.note)}</div>` : ''}
+        <div class="thumbrow">
+          ${e.photos.map(src=> `<div class="thumb"><img src="${src}"></div>`).join('')}
+        </div>
+        <div class="row-actions">
+          <span class="editbtn" data-id="${e.id}">Edit</span>
+          <span class="togglebtn" data-id="${e.id}">${status === 'open' ? 'Mark resolved' : 'Reopen'}</span>
+          ${e.lat != null ? `<span class="mapbtn" data-lat="${e.lat}" data-lon="${e.lon}">View map</span>` : ''}
+          <span class="del" data-id="${e.id}">Delete</span>
+        </div>
+      </div>`;
+    }).join('');
+
+    logList.querySelectorAll('.editbtn').forEach(el=>{
+      el.addEventListener('click', ()=> loadEntryForEdit(+el.dataset.id));
+    });
+    logList.querySelectorAll('.togglebtn').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        const entries = loadEntries();
+        const e = entries.find(x=> x.id === +el.dataset.id);
+        if(e){ e.status = (e.status||'open') === 'open' ? 'resolved' : 'open'; saveEntries(entries); renderLog(searchBox.value); }
+      });
+    });
+    logList.querySelectorAll('.mapbtn').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        window.open(`https://www.openstreetmap.org/?mlat=${el.dataset.lat}&mlon=${el.dataset.lon}#map=18/${el.dataset.lat}/${el.dataset.lon}`, '_blank');
+      });
+    });
+    logList.querySelectorAll('.del').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        if(!confirm('Delete this case from the log?')) return;
+        const entries = loadEntries().filter(x=> x.id !== +el.dataset.id);
+        saveEntries(entries);
+        renderLog(searchBox.value);
+      });
+    });
+  }
+
+  function escapeHtml(s){
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  searchBox.addEventListener('input', ()=> renderLog(searchBox.value));
+
+  exportCsvBtn.addEventListener('click', ()=>{
+    const entries = loadEntries();
+    if(entries.length === 0){ toast('No cases to export'); return; }
+    const rows = [['Address','Latitude','Longitude','Photo Date','Status','Note','Saved At']];
+    entries.forEach(e=>{
+      rows.push([
+        e.address, e.lat, e.lon,
+        e.capturedAt ? new Date(e.capturedAt).toLocaleString() : '',
+        e.status || 'open',
+        (e.note||'').replace(/\n/g,' '),
+        new Date(e.savedAt).toLocaleString()
+      ]);
+    });
+    const csv = rows.map(r=> r.map(v=> `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    downloadBlob(csv, 'text/csv', `case-log-${new Date().toISOString().slice(0,10)}.csv`);
+  });
+
+  exportJsonBtn.addEventListener('click', ()=>{
+    const entries = loadEntries();
+    if(entries.length === 0){ toast('No cases to back up'); return; }
+    downloadBlob(JSON.stringify(entries, null, 2), 'application/json', `case-log-backup-${new Date().toISOString().slice(0,10)}.json`);
+    toast('Backup file saved');
+  });
+
+  importJsonBtn.addEventListener('click', ()=> importFile.click());
+  importFile.addEventListener('change', e=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      try{
+        const data = JSON.parse(reader.result);
+        if(!Array.isArray(data)) throw new Error('bad format');
+        const existing = loadEntries();
+        const proceed = existing.length === 0 || confirm(`This will replace your current ${existing.length} case(s) with ${data.length} case(s) from the backup. Continue?`);
+        if(!proceed) return;
+        saveEntries(data);
+        renderLog();
+        toast('Backup restored');
+      } catch(err){
+        toast('Could not read that file — is it a Case Locator backup?');
+      }
+    };
+    reader.readAsText(file);
+    importFile.value = '';
+  });
+
+  function downloadBlob(content, type, filename){
+    const blob = new Blob([content], {type});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+  }
+
+  renderLog();
+})();
+</script>
+
+</body>
+</html>
