@@ -8,7 +8,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Karla:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
   :root{
     --paper:#EAE1D2;
@@ -24,16 +25,19 @@
     --rust:#A85338;
     --line-link:#5C6E63;
   }
-  *{box-sizing:border-box;}
+
+  *{ box-sizing:border-box; }
+
   body{
     margin:0;
     background:var(--paper);
-    background-image: radial-gradient(circle at 1px 1px, rgba(58,49,40,0.05) 1px, transparent 0);
+    background-image:radial-gradient(circle at 1px 1px, rgba(58,49,40,0.05) 1px, transparent 0);
     background-size:24px 24px;
     color:var(--ink);
     font-family:'Karla', Arial, sans-serif;
     -webkit-font-smoothing:antialiased;
   }
+
   .serif{ font-family:'Fraunces', Georgia, serif; }
 
   header{
@@ -42,6 +46,7 @@
     max-width:780px;
     margin:0 auto;
   }
+
   .eyebrow{
     font-size:11px;
     letter-spacing:.16em;
@@ -50,6 +55,7 @@
     font-weight:700;
     margin-bottom:6px;
   }
+
   h1{
     margin:0;
     font-family:'Fraunces', Georgia, serif;
@@ -58,6 +64,7 @@
     letter-spacing:.005em;
     color:var(--ink);
   }
+
   .subtitle{
     color:var(--ink-soft);
     font-size:14px;
@@ -70,18 +77,13 @@
     padding:22px 20px 60px;
   }
 
-  .emailpanel{
-    background:var(--card);
-    border:1px solid var(--rule);
-    border-radius:6px;
-    padding:18px;
-  }
   .ep-label{
     font-family:'Fraunces', Georgia, serif;
     font-weight:600;
     font-size:17px;
     color:var(--ink);
   }
+
   .ep-hint{
     font-size:12.5px;
     color:var(--ink-soft);
@@ -89,6 +91,7 @@
     line-height:1.6;
     margin-bottom:12px;
   }
+
   .ep-hint kbd{
     font-family:inherit;
     background:var(--paper-dark);
@@ -96,136 +99,112 @@
     border-radius:4px;
     padding:1px 6px;
   }
+
+  .intake-panel{
+    background:var(--card);
+    border:1px solid var(--rule);
+    border-radius:6px;
+    padding:18px;
+  }
+
+  .split-intake{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    align-items:stretch;
+  }
+
+  .email-half,
+  .photo-half{
+    min-height:145px;
+  }
+
+  .half-title{
+    font-size:12px;
+    font-weight:700;
+    color:var(--amber-dark);
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    margin-bottom:7px;
+  }
+
   .ep-box{
-    min-height:90px;
+    min-height:112px;
+    height:112px;
+    overflow:auto;
     border:1.5px dashed var(--rule);
     border-radius:6px;
     padding:14px;
-    font-size:13.5px;
+    font-size:14.5px;
     color:var(--ink);
     background:#fff;
     outline:none;
-    line-height:1.5;
+    line-height:1.45;
   }
+
   .ep-box:focus{ border-color:var(--amber); }
+
   .ep-box:empty::before{
-    content: attr(data-placeholder);
+    content:attr(data-placeholder);
     color:var(--ink-soft);
   }
-  .ep-box img{ max-width:120px; max-height:120px; border-radius:4px; margin:4px 6px 4px 0; vertical-align:middle; }
-  .ep-status{
-    font-size:12.5px;
-    color:var(--sage-dark);
-    margin-top:10px;
-    display:none;
+
+  .ep-box img{
+    max-width:120px;
+    max-height:120px;
+    border-radius:4px;
+    margin:4px 6px 4px 0;
+    vertical-align:middle;
   }
-  .ep-status.show{ display:block; }
 
   .dropzone{
     position:relative;
     border:1.5px dashed var(--rule);
-    background:var(--card);
+    background:#fff;
     border-radius:6px;
-    padding:36px 18px;
+    padding:18px 12px;
     text-align:center;
     cursor:pointer;
     transition:border-color .15s, background .15s;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    min-height:145px;
   }
+
   .dropzone.drag{
     border-color:var(--amber);
     background:#FFFBF2;
   }
+
   .dropzone .icon{
     font-size:26px;
-    margin-bottom:10px;
+    margin-bottom:8px;
     display:block;
     opacity:.85;
   }
-  .dropzone .title{ font-size:15px; font-weight:600; color:var(--ink); }
+
+  .dropzone .title{
+    font-size:15px;
+    font-weight:600;
+    color:var(--ink);
+  }
+
   .dropzone .hint{
     font-size:12.5px;
     color:var(--ink-soft);
     margin-top:7px;
-    line-height:1.6;
-  }
-  .dropzone .hint kbd{
-    font-family:inherit;
-    background:var(--paper-dark);
-    border:1px solid var(--rule);
-    border-radius:4px;
-    padding:1px 6px;
-  }
-  .intake-panel{
-  background:var(--card);
-  border:1px solid var(--rule);
-  border-radius:6px;
-  padding:18px;
-}
-
-.split-intake{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:12px;
-  align-items:stretch;
-}
-
-.email-half,
-.photo-half{
-  min-height:145px;
-}
-
-.half-title{
-  font-size:12px;
-  font-weight:700;
-  color:var(--amber-dark);
-  text-transform:uppercase;
-  letter-spacing:.08em;
-  margin-bottom:7px;
-}
-
-.email-half .ep-box{
-  min-height:112px;
-  height:112px;
-  overflow:auto;
-}
-
-.photo-half.dropzone{
-  padding:18px 12px;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  min-height:145px;
-}
-
-.photo-half .icon{
-  font-size:24px;
-  margin-bottom:6px;
-}
-
-.photo-half .title{
-  font-size:14px;
-}
-
-.photo-half .hint{
-  font-size:12px;
-}
-
-@media (max-width:600px){
-  .split-intake{
-    grid-template-columns:1fr;
+    line-height:1.45;
   }
 
-  .email-half .ep-box{
-    min-height:105px;
-    height:105px;
-  }
-
-  .photo-half.dropzone{
-    min-height:110px;
-  }
-}
   input[type=file]{ display:none; }
-  #pasteFocus{ position:absolute; inset:0; outline:none; }
+
+  #pasteFocus{
+    position:absolute;
+    inset:0;
+    outline:none;
+    pointer-events:none;
+  }
 
   .stage-label{
     font-size:11.5px;
@@ -238,6 +217,7 @@
     gap:10px;
     font-weight:600;
   }
+
   .stage-label::after{
     content:"";
     flex:1;
@@ -251,7 +231,9 @@
     border-radius:6px;
     padding:18px;
   }
+
   .staging.active{ display:block; }
+
   .edit-badge{
     display:inline-block;
     font-size:11px;
@@ -271,6 +253,7 @@
     gap:10px;
     margin-bottom:14px;
   }
+
   .thumb{
     position:relative;
     width:76px;
@@ -280,27 +263,41 @@
     overflow:hidden;
     border-radius:5px;
   }
-  .thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+
+  .thumb img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+
   .thumb .rm{
     position:absolute;
-    top:0; right:0;
+    top:0;
+    right:0;
     background:rgba(58,49,40,.72);
     color:#fff;
-    width:20px; height:20px;
-    line-height:20px;
+    width:22px;
+    height:22px;
+    line-height:22px;
     text-align:center;
-    font-size:13px;
+    font-size:14px;
     cursor:pointer;
+    z-index:2;
   }
+
   .thumb .tag{
     position:absolute;
-    bottom:0; left:0; right:0;
+    bottom:0;
+    left:0;
+    right:0;
     font-size:9px;
     text-align:center;
     padding:2px 0;
     color:#fff;
     letter-spacing:.04em;
   }
+
   .thumb .tag.ok{ background:var(--sage); }
   .thumb .tag.no{ background:var(--rust); }
 
@@ -309,56 +306,71 @@
     padding-top:16px;
     margin-top:6px;
   }
+
   .addr-edit-row{
     display:flex;
     align-items:flex-start;
     gap:8px;
   }
+
   .result-address{
     font-family:'Fraunces', Georgia, serif;
-    font-size:20px;
+    font-size:21px;
     font-weight:600;
     color:var(--ink);
-    line-height:1.4;
+    line-height:1.3;
     flex:1;
   }
+
   .result-address[contenteditable="true"]{
     outline:none;
     border-bottom:1px dashed var(--amber);
     padding-bottom:2px;
   }
+
   .edit-addr-btn{
-    font-size:11px;
+    font-size:12px;
     color:var(--line-link);
     cursor:pointer;
     white-space:nowrap;
     padding-top:5px;
+    font-weight:700;
   }
+
   .result-meta{
-    font-size:12.5px;
+    font-size:13px;
     color:var(--ink-soft);
     margin-top:5px;
   }
+
   .no-gps{
     background:#F3E5DD;
     border:1px solid var(--rust);
     color:#7E3E28;
     padding:11px 13px;
-    font-size:13px;
+    font-size:14px;
     border-radius:5px;
     margin-top:6px;
-    line-height:1.5;
+    line-height:1.45;
   }
+
   .map-embed{
     margin-top:13px;
     border:1px solid var(--rule);
     border-radius:5px;
     overflow:hidden;
   }
-  .map-embed iframe{ width:100%; height:220px; border:0; display:block; }
+
+  .map-embed iframe{
+    width:100%;
+    height:220px;
+    border:0;
+    display:block;
+  }
+
   .map-link{
     display:inline-block;
-    font-size:11.5px;
+    font-size:12.5px;
     margin-top:7px;
     color:var(--line-link);
   }
@@ -368,35 +380,52 @@
     gap:8px;
     margin-top:16px;
   }
+
   .status-choice{
     flex:1;
     text-align:center;
-    padding:8px;
+    padding:9px;
     border:1px solid var(--rule);
     border-radius:5px;
-    font-size:12.5px;
-    font-weight:600;
+    font-size:14px;
+    font-weight:700;
     cursor:pointer;
     color:var(--ink-soft);
     background:#fff;
     letter-spacing:.03em;
   }
-  .status-choice.active.open{ background:#F3E5DD; border-color:var(--rust); color:#7E3E28; }
-  .status-choice.active.resolved{ background:#E7EADE; border-color:var(--sage-dark); color:var(--sage-dark); }
+
+  .status-choice.active.open{
+    background:#F3E5DD;
+    border-color:var(--rust);
+    color:#7E3E28;
+  }
+
+  .status-choice.active.resolved{
+    background:#E7EADE;
+    border-color:var(--sage-dark);
+    color:var(--sage-dark);
+  }
 
   textarea{
     width:100%;
     margin-top:14px;
     font-family:'Karla', Arial, sans-serif;
-    font-size:13.5px;
-    padding:9px 10px;
+    font-size:15px;
+    padding:10px 11px;
     border:1px solid var(--rule);
     border-radius:5px;
     background:#fff;
     resize:vertical;
-    min-height:52px;
+    min-height:72px;
+    line-height:1.35;
   }
-  textarea:focus, .result-address:focus{ border-color:var(--amber); }
+
+  textarea:focus,
+  .result-address:focus{
+    border-color:var(--amber);
+    outline:none;
+  }
 
   .actions{
     display:flex;
@@ -404,10 +433,11 @@
     margin-top:16px;
     flex-wrap:wrap;
   }
+
   button{
     font-family:'Karla', Arial, sans-serif;
-    font-size:13px;
-    font-weight:600;
+    font-size:14px;
+    font-weight:700;
     letter-spacing:.02em;
     padding:10px 18px;
     border-radius:5px;
@@ -416,22 +446,23 @@
     background:#fff;
     color:var(--ink);
   }
-  
+
   button.primary{
     background:var(--amber);
     border-color:var(--amber-dark);
     color:#fff;
   }
+
   button.primary:disabled{
     background:#D8C7A6;
     border-color:#D8C7A6;
     cursor:not-allowed;
   }
+
   button:hover:not(:disabled){ filter:brightness(0.97); }
   button.ghost{ background:transparent; color:var(--ink-soft); }
-  button.small{ padding:6px 12px; font-size:12px; }
+  button.small{ padding:7px 13px; font-size:13px; }
 
-  /* LOG */
   .log-toolbar{
     display:flex;
     gap:8px;
@@ -439,91 +470,155 @@
     align-items:center;
     flex-wrap:wrap;
   }
+
   .log-toolbar input[type=search]{
     flex:1;
     min-width:140px;
     font-family:inherit;
-    font-size:13px;
-    padding:9px 11px;
+    font-size:15px;
+    padding:10px 12px;
     border:1px solid var(--rule);
     border-radius:5px;
     background:var(--card);
   }
+
   .filter-pills{
     display:flex;
     gap:6px;
     margin-bottom:14px;
   }
+
   .pill{
-    font-size:11.5px;
-    font-weight:600;
-    padding:5px 12px;
+    font-size:14px;
+    font-weight:700;
+    padding:7px 16px;
     border-radius:20px;
     border:1px solid var(--rule);
     background:var(--card);
     color:var(--ink-soft);
     cursor:pointer;
   }
+
   .pill.active{
     background:var(--amber);
     border-color:var(--amber-dark);
     color:#fff;
   }
-  .log-count{ font-size:11.5px; color:var(--ink-soft); margin-bottom:10px; }
+
+  .log-count{
+    font-size:15px;
+    color:var(--ink-soft);
+    margin-bottom:10px;
+  }
 
   .entry{
     background:var(--card);
     border:1px solid var(--rule);
-    border-left:4px solid var(--rust);
-    border-radius:6px;
-    padding:15px 17px;
-    margin-bottom:11px;
+    border-left:5px solid var(--rust);
+    border-radius:8px;
+    padding:16px 16px;
+    margin-bottom:14px;
     position:relative;
   }
-  .entry.resolved{ border-left-color:var(--sage-dark); opacity:.82; }
+
+  .entry.resolved{
+    border-left-color:var(--sage-dark);
+    opacity:.86;
+  }
+
   .entry .case-no{
     position:absolute;
-    top:12px; right:15px;
-    font-size:10.5px;
+    top:13px;
+    right:14px;
+    font-size:13px;
     color:var(--ink-soft);
     letter-spacing:.08em;
   }
+
   .entry .badge{
     display:inline-block;
-    font-size:9.5px;
+    font-size:13px;
     font-weight:700;
     letter-spacing:.06em;
     text-transform:uppercase;
-    padding:2px 8px;
+    padding:4px 11px;
     border-radius:20px;
-    margin-bottom:6px;
+    margin-bottom:7px;
   }
-  .entry .badge.open{ background:#F3E5DD; color:#7E3E28; }
-  .entry .badge.resolved{ background:#E7EADE; color:var(--sage-dark); }
+
+  .entry .badge.open{
+    background:#F3E5DD;
+    color:#7E3E28;
+  }
+
+  .entry .badge.resolved{
+    background:#E7EADE;
+    color:var(--sage-dark);
+  }
+
   .entry .addr{
     font-family:'Fraunces', Georgia, serif;
-    font-weight:600;
-    font-size:16.5px;
-    padding-right:70px;
+    font-weight:700;
+    font-size:24px;
+    line-height:1.15;
+    padding-right:76px;
   }
-  .entry .date{ font-size:11.5px; color:var(--ink-soft); margin-top:3px; }
-  .entry .note{ font-size:13px; margin-top:9px; color:var(--ink); white-space:pre-wrap; }
-  .entry .thumbrow{ margin-top:11px; margin-bottom:0; }
-  .entry .thumb{ width:54px; height:54px; }
-  .entry .row-actions{ margin-top:11px; display:flex; gap:16px; flex-wrap:wrap; }
+
+  .entry .date{
+    font-size:15px;
+    color:var(--ink-soft);
+    margin-top:4px;
+  }
+
+  .entry .note{
+    font-size:18px;
+    line-height:1.28;
+    margin-top:10px;
+    color:var(--ink);
+    white-space:pre-wrap;
+  }
+
+  .entry .thumbrow{
+    gap:12px;
+    margin-top:12px;
+    margin-bottom:0;
+  }
+
+  .entry .thumb{
+    width:145px;
+    height:145px;
+    border-radius:7px;
+    cursor:pointer;
+  }
+
+  .staging .thumb{
+    width:100px;
+    height:100px;
+  }
+
+  .entry .row-actions{
+    margin-top:12px;
+    display:flex;
+    gap:22px;
+    flex-wrap:wrap;
+  }
+
   .entry .row-actions span{
-    font-size:11.5px;
+    font-size:15px;
     color:var(--line-link);
     cursor:pointer;
     letter-spacing:.02em;
-    font-weight:600;
+    font-weight:700;
   }
-  .entry .row-actions span.del{ color:var(--rust); }
+
+  .entry .row-actions span.del{
+    color:var(--rust);
+  }
 
   .empty-log{
     text-align:center;
     color:var(--ink-soft);
-    font-size:13px;
+    font-size:15px;
     padding:34px 10px;
     border:1px dashed var(--rule);
     border-radius:6px;
@@ -534,14 +629,25 @@
     border-top:1px solid var(--rule);
     padding-top:16px;
   }
-  .backup-panel .stage-label{ margin-top:0; }
-  .backup-row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+
+  .backup-panel .stage-label{
+    margin-top:0;
+  }
+
+  .backup-row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+
   .backup-note{
-    font-size:12px;
+    font-size:13px;
     color:var(--ink-soft);
     margin-top:8px;
-    line-height:1.6;
+    line-height:1.55;
   }
+
   #importFile{ display:none; }
 
   .toast{
@@ -553,20 +659,107 @@
     color:#fff;
     padding:10px 20px;
     border-radius:6px;
-    font-size:12.5px;
+    font-size:13px;
     opacity:0;
     pointer-events:none;
     transition:opacity .2s, transform .2s;
     z-index:50;
   }
-  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .toast.show{
+    opacity:1;
+    transform:translateX(-50%) translateY(0);
+  }
+
+  .photo-viewer{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.82);
+    z-index:9999;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:18px;
+  }
+
+  .photo-viewer.show{
+    display:flex;
+  }
+
+  .photo-viewer img{
+    max-width:96vw;
+    max-height:88vh;
+    border-radius:8px;
+    background:#fff;
+    box-shadow:0 10px 35px rgba(0,0,0,.45);
+  }
+
+  .photo-viewer .close-photo{
+    position:fixed;
+    top:14px;
+    right:16px;
+    width:42px;
+    height:42px;
+    border-radius:50%;
+    border:1px solid rgba(255,255,255,.45);
+    background:rgba(0,0,0,.55);
+    color:#fff;
+    font-size:28px;
+    line-height:38px;
+    text-align:center;
+    cursor:pointer;
+    font-family:Arial, sans-serif;
+  }
+
+  @media (max-width:600px){
+    .split-intake{
+      grid-template-columns:1fr;
+    }
+
+    .ep-box{
+      min-height:105px;
+      height:105px;
+    }
+
+    .dropzone{
+      min-height:110px;
+    }
+  }
 
   @media (max-width:480px){
     h1{ font-size:25px; }
-    .dropzone{ padding:28px 12px; }
+
+    main{
+      padding-left:14px;
+      padding-right:14px;
+    }
+
+    .entry{
+      padding:15px 14px;
+    }
+
+    .entry .addr{
+      font-size:22px;
+      padding-right:64px;
+    }
+
+    .entry .note{
+      font-size:17px;
+    }
+
+    .entry .thumb{
+      width:132px;
+      height:132px;
+    }
+
+    .staging .thumb{
+      width:92px;
+      height:92px;
+    }
   }
 </style>
 </head>
+
 <body>
 
 <header>
@@ -577,30 +770,27 @@
 
 <main>
 
-  <div class="emailpanel" id="emailpanel">
-   <div class="intake-panel" id="intakePanel">
-  <div class="ep-label">Add Email + Photos</div>
-  <div class="ep-hint">
-    Paste the whole email on the left. Drop, paste, or click to add photos on the right.
-  </div>
+  <div class="intake-panel" id="intakePanel">
+    <div class="ep-label">Add Email + Photos</div>
+    <div class="ep-hint">Paste the whole email on the left. Drop, paste, or click to add photos on the right.</div>
 
-  <div class="split-intake">
-    <div class="email-half">
-      <div class="half-title">Email contents</div>
-      <div class="ep-box" id="emailBox" contenteditable="true" data-placeholder="Paste email here..."></div>
-    </div>
+    <div class="split-intake">
+      <div class="email-half">
+        <div class="half-title">Email contents</div>
+        <div class="ep-box" id="emailBox" contenteditable="true" data-placeholder="Paste email here..."></div>
+      </div>
 
-    <div class="photo-half dropzone" id="dropzone" tabindex="0">
-      <div id="pasteFocus"></div>
-      <span class="icon">📷</span>
-      <div class="title">Drop or click</div>
-      <div class="hint">Add pictures here</div>
-      <input type="file" id="fileInput" accept="image/*" multiple>
+      <div class="photo-half dropzone" id="dropzone" tabindex="0">
+        <div id="pasteFocus"></div>
+        <span class="icon">📷</span>
+        <div class="title">Drop or click</div>
+        <div class="hint">Add pictures here</div>
+        <input type="file" id="fileInput" accept="image/*" multiple>
+      </div>
     </div>
   </div>
-</div>
 
-  <div class="staging" id="staging">
+  <div class="staging" id="staging" style="margin-top:22px;">
     <div id="editBadge" class="edit-badge" style="display:none;">Editing saved case</div>
     <div class="thumbrow" id="thumbrow"></div>
 
@@ -626,11 +816,13 @@
     <input type="search" id="searchBox" placeholder="Search address or notes...">
     <button class="ghost small" id="exportCsvBtn">Export CSV</button>
   </div>
+
   <div class="filter-pills">
     <div class="pill active" data-filter="all">All</div>
     <div class="pill" data-filter="open">Open</div>
     <div class="pill" data-filter="resolved">Resolved</div>
   </div>
+
   <div class="log-count" id="logCount"></div>
   <div id="logList"></div>
 
@@ -641,7 +833,7 @@
       <button class="ghost small" id="importJsonBtn">Restore From Backup</button>
       <input type="file" id="importFile" accept="application/json">
     </div>
-    <div class="backup-note">Backups are saved as a single file with every case and photo included. If this browser's data ever gets cleared, restoring a backup brings everything back. Worth doing this every so often — restoring replaces the current log, so keep the most recent file.</div>
+    <div class="backup-note">Backups are saved as a single file with every case and photo included. Restoring replaces the current online log, so keep your most recent backup file.</div>
   </div>
 
 </main>
@@ -674,16 +866,25 @@
   const toastEl = document.getElementById('toast');
   const pills = document.querySelectorAll('.pill');
 
- const SUPABASE_URL = 'https://ghnuahsovbpyzrjvbylp.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdobnVhaHNvdmJweXpyanZieWxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4ODM0ODUsImV4cCI6MjA5ODQ1OTQ4NX0.MQ-6qcKhtR0vktmdJQIBe3i-UT6b94Sl11elcUifIL8';
-const SUPABASE_TABLE = 'pin_it_cases';
-const SUPABASE_BUCKET = 'pin-it-photos';
+  const SUPABASE_URL = 'https://ghnuahsovbpyzrjvbylp.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdobnVhaHNvdmJweXpyanZieWxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4ODM0ODUsImV4cCI6MjA5ODQ1OTQ4NX0.MQ-6qcKhtR0vktmdJQIBe3i-UT6b94Sl11elcUifIL8';
+  const SUPABASE_TABLE = 'pin_it_cases';
+  const SUPABASE_BUCKET = 'pin-it-photos';
 
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-let current = { editId:null, photos: [], address: null, lat: null, lon: null, capturedAt: null, status:'open' };
-let geocodeCache = {};
-let activeFilter = 'all';
+  let current = {
+    editId:null,
+    photos:[],
+    address:null,
+    lat:null,
+    lon:null,
+    capturedAt:null,
+    status:'open'
+  };
+
+  let geocodeCache = {};
+  let activeFilter = 'all';
 
   function toast(msg){
     toastEl.textContent = msg;
@@ -691,118 +892,128 @@ let activeFilter = 'all';
     setTimeout(()=> toastEl.classList.remove('show'), 2400);
   }
 
- async function loadEntries(){
-  const { data, error } = await supabaseClient
-    .from(SUPABASE_TABLE)
-    .select('*')
-    .order('created_at', { ascending:false });
-
-  if(error){
-    console.error('Could not load Supabase cases:', error);
-    toast('Could not load cases');
-    return [];
+  function escapeHtml(s){
+    const d = document.createElement('div');
+    d.textContent = s == null ? '' : String(s);
+    return d.innerHTML;
   }
 
-  return (data || []).map(row => ({
-    id: row.id,
-    address: row.address,
-    lat: row.lat,
-    lon: row.lon,
-    capturedAt: row.captured_at,
-    note: row.note || row.email_body || '',
-    status: row.status || 'open',
-    photos: Array.isArray(row.photos) ? row.photos : [],
-    savedAt: row.created_at,
-    emailSubject: row.email_subject || '',
-    emailFrom: row.email_from || '',
-    emailBody: row.email_body || ''
-  }));
-}
+  async function loadEntries(){
+    const { data, error } = await supabaseClient
+      .from(SUPABASE_TABLE)
+      .select('*')
+      .order('created_at', { ascending:false });
 
-function dataUrlToBlob(dataUrl){
-  const parts = dataUrl.split(',');
-  const header = parts[0] || '';
-  const data = parts[1] || '';
-  const mime = (header.match(/data:(.*?);/) || [])[1] || 'image/jpeg';
-  const binary = atob(data);
-  const bytes = new Uint8Array(binary.length);
-
-  for(let i = 0; i < binary.length; i++){
-    bytes[i] = binary.charCodeAt(i);
-  }
-
-  return new Blob([bytes], { type:mime });
-}
-
-function fileExtFromMime(mime){
-  if(mime === 'image/png') return 'png';
-  if(mime === 'image/webp') return 'webp';
-  if(mime === 'image/gif') return 'gif';
-  return 'jpg';
-}
-
-async function uploadPhotosForCase(photoSources, caseId){
-  const uploaded = [];
-
-  for(let i = 0; i < photoSources.length; i++){
-    const src = photoSources[i];
-
-    // Already uploaded photo URL from Supabase — keep it.
-    if(typeof src === 'string' && src.startsWith('http')){
-      uploaded.push(src);
-      continue;
+    if(error){
+      console.error('Could not load Supabase cases:', error);
+      toast('Could not load cases');
+      return [];
     }
 
-    // New local pasted/uploaded photo — upload it.
-    if(typeof src === 'string' && src.startsWith('data:image/')){
-      const blob = dataUrlToBlob(src);
-      const ext = fileExtFromMime(blob.type);
-      const path = `cases/${caseId}/${Date.now()}-${i}.${ext}`;
+    return (data || []).map(row => ({
+      id: row.id,
+      address: row.address || '',
+      lat: row.lat,
+      lon: row.lon,
+      capturedAt: row.captured_at,
+      note: row.note || row.email_body || '',
+      status: row.status || 'open',
+      photos: Array.isArray(row.photos) ? row.photos : [],
+      savedAt: row.created_at,
+      emailSubject: row.email_subject || '',
+      emailFrom: row.email_from || '',
+      emailBody: row.email_body || ''
+    }));
+  }
 
-      const { error } = await supabaseClient.storage
-        .from(SUPABASE_BUCKET)
-        .upload(path, blob, {
-          contentType: blob.type,
-          upsert: true
-        });
+  function dataUrlToBlob(dataUrl){
+    const parts = dataUrl.split(',');
+    const header = parts[0] || '';
+    const data = parts[1] || '';
+    const mime = (header.match(/data:(.*?);/) || [])[1] || 'image/jpeg';
+    const binary = atob(data);
+    const bytes = new Uint8Array(binary.length);
 
-      if(error){
-        console.error('Photo upload failed:', error);
-        toast('One photo did not upload');
+    for(let i = 0; i < binary.length; i++){
+      bytes[i] = binary.charCodeAt(i);
+    }
+
+    return new Blob([bytes], { type:mime });
+  }
+
+  function fileExtFromMime(mime){
+    if(mime === 'image/png') return 'png';
+    if(mime === 'image/webp') return 'webp';
+    if(mime === 'image/gif') return 'gif';
+    return 'jpg';
+  }
+
+  async function uploadPhotosForCase(photoSources, caseId){
+    const uploaded = [];
+
+    for(let i = 0; i < photoSources.length; i++){
+      const src = photoSources[i];
+
+      if(typeof src === 'string' && src.startsWith('http')){
+        uploaded.push(src);
         continue;
       }
 
-      const { data } = supabaseClient.storage
-        .from(SUPABASE_BUCKET)
-        .getPublicUrl(path);
+      if(typeof src === 'string' && src.startsWith('data:image/')){
+        const blob = dataUrlToBlob(src);
+        const ext = fileExtFromMime(blob.type);
+        const path = `cases/${caseId}/${Date.now()}-${i}.${ext}`;
 
-      if(data?.publicUrl){
-        uploaded.push(data.publicUrl);
+        const { error } = await supabaseClient.storage
+          .from(SUPABASE_BUCKET)
+          .upload(path, blob, {
+            contentType: blob.type,
+            upsert: true
+          });
+
+        if(error){
+          console.error('Photo upload failed:', error);
+          toast('One photo did not upload');
+          continue;
+        }
+
+        const { data } = supabaseClient.storage
+          .from(SUPABASE_BUCKET)
+          .getPublicUrl(path);
+
+        if(data?.publicUrl){
+          uploaded.push(data.publicUrl);
+        }
       }
     }
+
+    return uploaded;
   }
 
-  return uploaded;
-}
-
-  // ---------- File intake ----------
   dropzone.addEventListener('click', ()=> fileInput.click());
-  dropzone.addEventListener('keydown', e=>{ if(e.key==='Enter') fileInput.click(); });
+
+  dropzone.addEventListener('keydown', e=>{
+    if(e.key === 'Enter') fileInput.click();
+  });
 
   ['dragenter','dragover'].forEach(ev=>{
     dropzone.addEventListener(ev, e=>{
-      e.preventDefault(); e.stopPropagation();
+      e.preventDefault();
+      e.stopPropagation();
       dropzone.classList.add('drag');
     });
   });
+
   ['dragleave','drop'].forEach(ev=>{
     dropzone.addEventListener(ev, e=>{
-      e.preventDefault(); e.stopPropagation();
+      e.preventDefault();
+      e.stopPropagation();
       dropzone.classList.remove('drag');
     });
   });
+
   dropzone.addEventListener('drop', e=>{
-    const files = [...e.dataTransfer.files].filter(f=> f.type.startsWith('image/'));
+    const files = [...e.dataTransfer.files].filter(f => f.type.startsWith('image/'));
     if(files.length) handleFiles(files);
   });
 
@@ -813,8 +1024,14 @@ async function uploadPhotosForCase(photoSources, caseId){
   });
 
   document.addEventListener('paste', e=>{
+    if(emailBox.contains(document.activeElement)) return;
+
     const items = [...(e.clipboardData?.items || [])];
-    const files = items.filter(i=> i.type.startsWith('image/')).map(i=> i.getAsFile());
+    const files = items
+      .filter(i => i.type.startsWith('image/'))
+      .map(i => i.getAsFile())
+      .filter(Boolean);
+
     if(files.length) handleFiles(files);
   });
 
@@ -823,27 +1040,44 @@ async function uploadPhotosForCase(photoSources, caseId){
     e.stopPropagation();
 
     const items = [...(e.clipboardData?.items || [])];
-    const imageFiles = items.filter(i=> i.kind === 'file' && i.type.startsWith('image/')).map(i=> i.getAsFile());
-   const plainText = e.clipboardData.getData('text/plain') || '';
 
-const violationGuess = guessViolationFromText(plainText);
-if(violationGuess && !noteField.value.trim()){
-  noteField.value = violationGuess;
-}
+    const imageFiles = items
+      .filter(i => i.kind === 'file' && i.type.startsWith('image/'))
+      .map(i => i.getAsFile())
+      .filter(Boolean);
 
-emailBox.innerHTML = `Captured ${imageFiles.length} photo${imageFiles.length===1?'':'s'}, email text, and checked for address/violation details.`;
+    const plainText = e.clipboardData.getData('text/plain') || '';
 
-staging.classList.add('active');
+    const violationGuess = guessViolationFromText(plainText);
+
+    if(!noteField.value.trim()){
+      const noteParts = [];
+
+      if(violationGuess){
+        noteParts.push(`Possible violation: ${violationGuess}`);
+      }
+
+      if(plainText.trim()){
+        noteParts.push(`Full email:\n${plainText.trim()}`);
+      }
+
+      noteField.value = noteParts.join('\n\n').trim();
+    }
+
+    emailBox.innerHTML = `Captured ${imageFiles.length} photo${imageFiles.length === 1 ? '' : 's'}, email text, and checked for address/violation details.`;
+
+    staging.classList.add('active');
 
     if(imageFiles.length){
       await handleFiles(imageFiles);
     }
 
-    // Only try text-based address guessing if photo GPS didn't already resolve one
     if(!current.address){
       const guess = guessAddressFromText(plainText);
+
       if(guess){
         const found = await forwardGeocode(guess);
+
         if(found){
           current.address = found.display_name || guess;
           current.lat = found.lat;
@@ -857,6 +1091,7 @@ staging.classList.add('active');
         renderNoGps('');
       }
     }
+
     saveBtn.disabled = !current.address;
     window.scrollTo({ top: staging.offsetTop - 20, behavior:'smooth' });
   });
@@ -864,15 +1099,32 @@ staging.classList.add('active');
   addMoreBtn.addEventListener('click', ()=> fileInput.click());
   clearBtn.addEventListener('click', resetStage);
 
-  statusOpenBtn.addEventListener('click', ()=>{ current.status='open'; renderStatus(); });
-  statusResolvedBtn.addEventListener('click', ()=>{ current.status='resolved'; renderStatus(); });
+  statusOpenBtn.addEventListener('click', ()=>{
+    current.status = 'open';
+    renderStatus();
+  });
+
+  statusResolvedBtn.addEventListener('click', ()=>{
+    current.status = 'resolved';
+    renderStatus();
+  });
+
   function renderStatus(){
-    statusOpenBtn.classList.toggle('active', current.status==='open');
-    statusResolvedBtn.classList.toggle('active', current.status==='resolved');
+    statusOpenBtn.classList.toggle('active', current.status === 'open');
+    statusResolvedBtn.classList.toggle('active', current.status === 'resolved');
   }
 
   function resetStage(){
-    current = { editId:null, photos: [], address: null, lat: null, lon: null, capturedAt: null, status:'open' };
+    current = {
+      editId:null,
+      photos:[],
+      address:null,
+      lat:null,
+      lon:null,
+      capturedAt:null,
+      status:'open'
+    };
+
     staging.classList.remove('active');
     editBadge.style.display = 'none';
     thumbrow.innerHTML = '';
@@ -886,25 +1138,38 @@ staging.classList.add('active');
 
   async function handleFiles(files){
     staging.classList.add('active');
+
     for(const file of files){
       const dataUrl = await fileToDataUrl(file);
-      const photo = { dataUrl, name: file.name, gps:null, date:null };
+
+      const photo = {
+        dataUrl,
+        name: file.name,
+        gps:null,
+        date:null
+      };
+
       current.photos.push(photo);
       renderThumbs();
 
       try{
         const gps = await exifr.gps(file);
+
         if(gps && typeof gps.latitude === 'number' && typeof gps.longitude === 'number' && !isNaN(gps.latitude) && !isNaN(gps.longitude)){
-          photo.gps = { lat: gps.latitude, lon: gps.longitude };
+          photo.gps = {
+            lat: gps.latitude,
+            lon: gps.longitude
+          };
         }
-      } catch(err){ /* no gps, that's fine */ }
+      } catch(err){}
 
       try{
         const meta = await exifr.parse(file, { pick:['DateTimeOriginal','CreateDate'] });
+
         if(meta && (meta.DateTimeOriginal || meta.CreateDate)){
           photo.date = meta.DateTimeOriginal || meta.CreateDate;
         }
-      } catch(err){ /* no date, that's fine */ }
+      } catch(err){}
 
       renderThumbs();
 
@@ -915,14 +1180,16 @@ staging.classList.add('active');
         await resolveAddress();
       }
     }
+
     if(!current.lat && !current.address){
       renderNoGps();
     }
+
     saveBtn.disabled = !current.address;
   }
 
   function fileToDataUrl(file){
-    return new Promise((res,rej)=>{
+    return new Promise((res, rej)=>{
       const r = new FileReader();
       r.onload = ()=> res(r.result);
       r.onerror = rej;
@@ -938,44 +1205,56 @@ staging.classList.add('active');
         ${p.gps ? '<div class="tag ok">GPS ✓</div>' : '<div class="tag no">no GPS</div>'}
       </div>
     `).join('');
+
     thumbrow.querySelectorAll('.rm').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
+      btn.addEventListener('click', e=>{
+        e.stopPropagation();
         const i = +btn.dataset.i;
-        current.photos.splice(i,1);
+        current.photos.splice(i, 1);
         renderThumbs();
-        if(current.photos.length === 0 && !current.editId) resetStage();
+
+        if(current.photos.length === 0 && !current.editId){
+          resetStage();
+        }
       });
     });
   }
 
   function renderNoGps(prefillAddr){
     const prefill = prefillAddr !== undefined ? prefillAddr : (current.address || '');
+
     resultArea.innerHTML = `
       <div class="no-gps">
         No location data found on ${current.photos.length > 1 ? 'these photos' : (current.photos.length === 1 ? 'this photo' : 'this case')}.
-        The image may have been screenshotted, forwarded through an app that strips metadata, or GPS tagging may be off on the sender's phone.
         Type or confirm the address below, then find it on the map.
       </div>
       <div class="addr-edit-row" style="margin-top:12px;">
-        <div class="result-address" id="manualAddr" contenteditable="true" data-placeholder="Type address here...">${prefill}</div>
+        <div class="result-address" id="manualAddr" contenteditable="true">${escapeHtml(prefill)}</div>
       </div>
       <button class="ghost small" id="findOnMapBtn" style="margin-top:10px;">Find on Map</button>
-      <div class="ep-status" id="geoStatus"></div>
+      <div class="result-meta" id="geoStatus" style="display:none;"></div>
     `;
+
     const manualAddr = document.getElementById('manualAddr');
     const geoStatus = document.getElementById('geoStatus');
+
     manualAddr.addEventListener('input', ()=>{
       current.address = manualAddr.textContent.trim() || null;
       saveBtn.disabled = !current.address;
     });
+
     current.address = prefill.trim() || null;
     saveBtn.disabled = !current.address;
+
     document.getElementById('findOnMapBtn').addEventListener('click', async ()=>{
       const text = manualAddr.textContent.trim();
-      if(!text){ return; }
+      if(!text) return;
+
       geoStatus.textContent = 'Looking up map location…';
-      geoStatus.classList.add('show');
+      geoStatus.style.display = 'block';
+
       const found = await forwardGeocode(text);
+
       if(found){
         current.address = found.display_name || text;
         current.lat = found.lat;
@@ -985,6 +1264,7 @@ staging.classList.add('active');
         geoStatus.textContent = "Couldn't find that on the map — the address will still be saved as typed.";
       }
     });
+
     statusRow.style.display = 'flex';
     renderStatus();
   }
@@ -992,103 +1272,112 @@ staging.classList.add('active');
   async function forwardGeocode(addressText){
     try{
       const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(addressText)}&limit=1&addressdetails=1`, {
-        headers: { 'Accept-Language': 'en' }
+        headers:{ 'Accept-Language':'en' }
       });
+
       const data = await resp.json();
+
       if(data && data[0]){
-        return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon), display_name: data[0].display_name };
+        return {
+          lat: parseFloat(data[0].lat),
+          lon: parseFloat(data[0].lon),
+          display_name: data[0].display_name
+        };
       }
-    } catch(e){ /* offline or blocked, fine */ }
+    } catch(e){}
+
     return null;
   }
 
-  // Rough address-shaped text finder: a street number + street words + common suffix,
-  // optionally followed by city/state/zip. Not perfect, always shown editable before saving.
-  function guessViolationFromText(text){
-  if(!text) return '';
-
-  const clean = text
-    .replace(/\r/g, '\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-
-  const lines = clean
-    .split('\n')
-    .map(line => line.trim())
-    .filter(Boolean);
-
-  const labelPatterns = [
-    /^(violation|violation type|problem|issue|complaint|description|comments?|notes?|concern|reason)\s*[:\-]\s*(.+)$/i,
-    /^(reported issue|reported problem|hoa violation|community violation)\s*[:\-]\s*(.+)$/i
-  ];
-
-  for(const line of lines){
-    for(const re of labelPatterns){
-      const m = line.match(re);
-      if(m && m[2]){
-        return cleanupViolationText(m[2]);
-      }
-    }
-  }
-
-  const keywordRe = /\b(trash|garbage|bins?|can|parking|vehicle|car|trailer|rv|boat|yard|lawn|weeds?|grass|noise|pet|dog|fence|paint|roof|debris|junk|stored|storage|holiday|decorations?|sign|pool|gate|mailbox|violation|non[-\s]?compliance|complaint)\b/i;
-
-  const scored = lines
-    .filter(line =>
-      keywordRe.test(line) &&
-      !/@/.test(line) &&
-      line.length >= 12 &&
-      line.length <= 220
-    )
-    .map(line => cleanupViolationText(line));
-
-  if(scored.length){
-    return scored[0];
-  }
-
-  const subject = clean.match(/^subject\s*[:\-]\s*(.+)$/im);
-  if(subject && subject[1] && keywordRe.test(subject[1])){
-    return cleanupViolationText(subject[1]);
-  }
-
-  return '';
-}
-
-function cleanupViolationText(value){
-  return String(value || '')
-    .replace(/^["'“”]+|["'“”]+$/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
   function guessAddressFromText(text){
     if(!text) return null;
-    const clean = text.replace(/\r/g,'');
-    const suffix = '(?:Street|St|Avenue|Ave|Boulevard|Blvd|Drive|Dr|Lane|Ln|Road|Rd|Court|Ct|Place|Pl|Way|Circle|Cir|Terrace|Ter|Parkway|Pkwy|Highway|Hwy|Trail|Trl|Loop|Square|Sq)\.?';
-    const streetRe = new RegExp('\\b(\\d{1,6}\\s+[A-Za-z0-9.\'\\-]+(?:\\s+[A-Za-z0-9.\'\\-]+){0,4}\\s+' + suffix + '\\b)', 'i');
+
+    const clean = text.replace(/\r/g, '');
+
+    const suffix = '(?:Street|St|Avenue|Ave|Boulevard|Blvd|Drive|Dr|Lane|Ln|Road|Rd|Court|Ct|Place|Pl|Way|Circle|Cir|Terrace|Ter|Parkway|Pkwy|Highway|Hwy|Trail|Trl|Loop|Square|Sq)\\.?';
+
+    const streetRe = new RegExp('\\b(\\d{1,6}\\s+[A-Za-z0-9.\'\\-]+(?:\\s+[A-Za-z0-9.\'\\-]+){0,5}\\s+' + suffix + '\\b)', 'i');
+
     const m = clean.match(streetRe);
+
     if(!m) return null;
+
     let result = m[1].trim();
+
     const afterIdx = m.index + m[0].length;
-    const tail = clean.slice(afterIdx, afterIdx + 80);
-    const cityStateZip = tail.match(/^[,\s]+([A-Za-z .'\-]{2,30},?\s*[A-Z]{2}\s*\d{5}(-\d{4})?)/);
+    const tail = clean.slice(afterIdx, afterIdx + 100);
+
+    const cityStateZip = tail.match(/^[,\s]+([A-Za-z .'\-]{2,40},?\s*[A-Z]{2}\s*\d{5}(-\d{4})?)/);
+
     if(cityStateZip){
       result += ', ' + cityStateZip[1].replace(/\s+,/, ',').trim();
     } else {
-      const unit = tail.match(/^[,\s]*(Apt|Unit|#)\s*[\w-]+/i);
+      const unit = tail.match(/^[,\s]*(Apt|Apartment|Unit|Suite|Ste|#)\s*[\w-]+/i);
       if(unit) result += ', ' + unit[0].trim();
     }
+
     return result;
   }
 
+  function guessViolationFromText(text){
+    if(!text) return '';
+
+    const clean = String(text)
+      .replace(/\r/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+
+    const lines = clean
+      .split('\n')
+      .map(line => line.trim())
+      .filter(Boolean);
+
+    const found = [];
+
+    const labelPatterns = [
+      /^(violation|violation type|problem|issue|complaint|description|comments?|notes?|concern|reason)\s*[:\-]\s*(.+)$/i,
+      /^(reported issue|reported problem|hoa violation|community violation)\s*[:\-]\s*(.+)$/i
+    ];
+
+    for(const line of lines){
+      for(const re of labelPatterns){
+        const m = line.match(re);
+        if(m && m[2]){
+          found.push(cleanupViolationText(m[2]));
+        }
+      }
+    }
+
+    const keywordRe = /\b(trash|garbage|bins?|can|parking|vehicle|car|trailer|rv|boat|yard|lawn|weeds?|grass|bushes|shrubs|trimmed|overgrown|noise|pet|dog|fence|paint|roof|debris|junk|stored|storage|holiday|decorations?|sign|pool|gate|mailbox|violation|non[-\s]?compliance|complaint)\b/i;
+
+    for(const line of lines){
+      if(keywordRe.test(line) && !/@/.test(line) && line.length >= 8 && line.length <= 220){
+        found.push(cleanupViolationText(line));
+      }
+    }
+
+    return [...new Set(found)].slice(0, 3).join('; ');
+  }
+
+  function cleanupViolationText(value){
+    return String(value || '')
+      .replace(/^["'“”]+|["'“”]+$/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
   async function resolveAddress(){
-    resultArea.innerHTML = `<div class="result-block" style="color:var(--ink-soft); font-size:13px;">Looking up address…</div>`;
+    resultArea.innerHTML = `<div class="result-block" style="color:var(--ink-soft); font-size:14px;">Looking up address…</div>`;
+
     const key = current.lat.toFixed(5) + ',' + current.lon.toFixed(5);
     let addr = geocodeCache[key];
+
     if(!addr){
       try{
         const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${current.lat}&lon=${current.lon}&zoom=18&addressdetails=1`, {
-          headers: { 'Accept-Language': 'en' }
+          headers:{ 'Accept-Language':'en' }
         });
+
         const data = await resp.json();
         addr = data.display_name || null;
         geocodeCache[key] = addr;
@@ -1096,369 +1385,433 @@ function cleanupViolationText(value){
         addr = null;
       }
     }
+
     const coordsValid = !isNaN(current.lat) && !isNaN(current.lon);
     current.address = addr || (coordsValid ? `${current.lat.toFixed(6)}, ${current.lon.toFixed(6)} (address lookup failed)` : null);
-    if(!current.address){ renderNoGps(); return; }
+
+    if(!current.address){
+      renderNoGps();
+      return;
+    }
+
     renderResult();
   }
 
   function renderResult(){
     const dateStr = current.capturedAt ? new Date(current.capturedAt).toLocaleString() : null;
     const hasCoords = current.lat !== null && current.lat !== undefined;
+
     resultArea.innerHTML = `
       <div class="result-block">
         <div class="addr-edit-row">
-          <div class="result-address" id="addrText" contenteditable="false">${current.address}</div>
+          <div class="result-address" id="addrText" contenteditable="false">${escapeHtml(current.address)}</div>
           <span class="edit-addr-btn" id="editAddrBtn">Edit</span>
         </div>
         <div class="result-meta">
           ${dateStr ? 'Photo taken: ' + dateStr + ' · ' : ''}
-          ${hasCoords ? current.lat.toFixed(6) + ', ' + current.lon.toFixed(6) : 'no coordinates'}
+          ${hasCoords ? Number(current.lat).toFixed(6) + ', ' + Number(current.lon).toFixed(6) : 'no coordinates'}
         </div>
         ${hasCoords ? `
-        <div class="map-embed">
-          <iframe loading="lazy"
-            src="https://www.openstreetmap.org/export/embed.html?bbox=${current.lon-0.003}%2C${current.lat-0.002}%2C${current.lon+0.003}%2C${current.lat+0.002}&layer=mapnik&marker=${current.lat}%2C${current.lon}">
-          </iframe>
-        </div>
-        <a class="map-link" target="_blank" rel="noopener"
-           href="https://www.openstreetmap.org/?mlat=${current.lat}&mlon=${current.lon}#map=18/${current.lat}/${current.lon}">
-           Open full map ↗
-        </a>` : ''}
+          <div class="map-embed">
+            <iframe loading="lazy"
+              src="https://www.openstreetmap.org/export/embed.html?bbox=${current.lon - 0.003}%2C${current.lat - 0.002}%2C${current.lon + 0.003}%2C${current.lat + 0.002}&layer=mapnik&marker=${current.lat}%2C${current.lon}">
+            </iframe>
+          </div>
+          <a class="map-link" target="_blank" rel="noopener"
+            href="https://www.openstreetmap.org/?mlat=${current.lat}&mlon=${current.lon}#map=18/${current.lat}/${current.lon}">
+            Open full map ↗
+          </a>
+        ` : ''}
       </div>
     `;
+
     const addrText = document.getElementById('addrText');
-    document.getElementById('editAddrBtn').addEventListener('click', ()=>{
+    const editBtn = document.getElementById('editAddrBtn');
+
+    editBtn.addEventListener('click', ()=>{
       const editing = addrText.getAttribute('contenteditable') === 'true';
+
       addrText.setAttribute('contenteditable', editing ? 'false' : 'true');
-      document.getElementById('editAddrBtn').textContent = editing ? 'Edit' : 'Done';
-      if(!editing) addrText.focus();
-      else { current.address = addrText.textContent.trim(); }
+      editBtn.textContent = editing ? 'Edit' : 'Done';
+
+      if(!editing){
+        addrText.focus();
+      } else {
+        current.address = addrText.textContent.trim();
+      }
     });
+
     addrText.addEventListener('input', ()=>{
       current.address = addrText.textContent.trim();
       saveBtn.disabled = !current.address;
     });
+
     statusRow.style.display = 'flex';
     renderStatus();
     saveBtn.disabled = !current.address;
   }
 
   saveBtn.addEventListener('click', async ()=>{
-  if(!current.address) return;
+    if(!current.address) return;
 
-  const oldText = saveBtn.textContent;
-  saveBtn.disabled = true;
-  saveBtn.textContent = 'Saving...';
+    const oldText = saveBtn.textContent;
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
 
-  try{
-    const caseId = current.editId || crypto.randomUUID();
-    const photoSources = current.photos.map(p => p.dataUrl);
-    const photoUrls = await uploadPhotosForCase(photoSources, caseId);
+    try{
+      const caseId = current.editId || crypto.randomUUID();
+      const photoSources = current.photos.map(p => p.dataUrl);
+      const photoUrls = await uploadPhotosForCase(photoSources, caseId);
 
-    const record = {
-      id: caseId,
-      address: current.address,
-      lat: current.lat,
-      lon: current.lon,
-      captured_at: current.capturedAt ? new Date(current.capturedAt).toISOString() : null,
-      note: noteField.value.trim(),
-      status: current.status || 'open',
-      photos: photoUrls,
-      updated_at: new Date().toISOString()
+      const record = {
+        id: caseId,
+        address: current.address,
+        lat: current.lat,
+        lon: current.lon,
+        captured_at: current.capturedAt ? new Date(current.capturedAt).toISOString() : null,
+        note: noteField.value.trim(),
+        status: current.status || 'open',
+        photos: photoUrls,
+        updated_at: new Date().toISOString()
+      };
+
+      const { error } = await supabaseClient
+        .from(SUPABASE_TABLE)
+        .upsert(record, { onConflict:'id' });
+
+      if(error) throw error;
+
+      toast(current.editId ? 'Case updated' : 'Saved to Supabase');
+      resetStage();
+      await renderLog(searchBox.value);
+    } catch(err){
+      console.error('Save failed:', err);
+      toast('Save failed — check Supabase');
+      saveBtn.disabled = false;
+      saveBtn.textContent = oldText;
+    }
+  });
+
+  async function loadEntryForEdit(id){
+    const entries = await loadEntries();
+    const e = entries.find(x => x.id === id);
+
+    if(!e) return;
+
+    current = {
+      editId: e.id,
+      photos: (e.photos || []).map(src => ({
+        dataUrl: src,
+        gps: (e.lat != null ? { lat:e.lat, lon:e.lon } : null)
+      })),
+      address: e.address,
+      lat: e.lat,
+      lon: e.lon,
+      capturedAt: e.capturedAt,
+      status: e.status || 'open'
     };
 
-    const { error } = await supabaseClient
-      .from(SUPABASE_TABLE)
-      .upsert(record, { onConflict:'id' });
+    staging.classList.add('active');
+    editBadge.style.display = 'inline-block';
+    noteField.value = e.note || '';
+    renderThumbs();
 
-    if(error) throw error;
+    if(e.lat != null){
+      renderResult();
+    } else {
+      renderNoGps(e.address || '');
+    }
 
-    toast(current.editId ? 'Case updated in Supabase' : 'Saved to Supabase');
-    resetStage();
-    await renderLog(searchBox.value);
-  } catch(err){
-    console.error('Save failed:', err);
-    toast('Save failed — check Supabase');
     saveBtn.disabled = false;
-    saveBtn.textContent = oldText;
-  }
-});
+    saveBtn.textContent = 'Update Case';
 
-  // ---------- Edit existing entry ----------
-  async function loadEntryForEdit(id){
-  const entries = await loadEntries();
-  const e = entries.find(x => x.id === id);
-  if(!e) return;
-
-  current = {
-    editId: e.id,
-    photos: (e.photos || []).map(src => ({
-      dataUrl: src,
-      gps: (e.lat != null ? { lat:e.lat, lon:e.lon } : null)
-    })),
-    address: e.address,
-    lat: e.lat,
-    lon: e.lon,
-    capturedAt: e.capturedAt,
-    status: e.status || 'open'
-  };
-
-  staging.classList.add('active');
-  editBadge.style.display = 'inline-block';
-  noteField.value = e.note || '';
-  renderThumbs();
-
-  if(e.lat != null){
-    renderResult();
-  } else {
-    renderNoGps();
+    window.scrollTo({ top: staging.offsetTop - 20, behavior:'smooth' });
   }
 
-  saveBtn.disabled = false;
-  saveBtn.textContent = 'Update Case';
-  window.scrollTo({ top: staging.offsetTop - 20, behavior:'smooth' });
-}
-
- async function renderLog(filter=''){
-  const entries = await loadEntries();
-  const q = filter.trim().toLowerCase();
-
-  let filtered = q ? entries.filter(e =>
-    (e.address || '').toLowerCase().includes(q) ||
-    (e.note || '').toLowerCase().includes(q) ||
-    (e.emailBody || '').toLowerCase().includes(q)
-  ) : entries.slice();
-
-  if(activeFilter !== 'all'){
-    filtered = filtered.filter(e => (e.status || 'open') === activeFilter);
-  }
-
-  logCount.textContent = `${filtered.length} case${filtered.length===1?'':'s'}${q || activeFilter!=='all' ? ' (filtered)' : ''}`;
-
-  if(filtered.length === 0){
-    logList.innerHTML = `<div class="empty-log">No cases match here yet.</div>`;
-    return;
-  }
-
-  logList.innerHTML = filtered.map((e, index)=>{
-    const dateStr = e.capturedAt
-      ? new Date(e.capturedAt).toLocaleDateString()
-      : new Date(e.savedAt).toLocaleDateString();
-
-    const status = e.status || 'open';
-
-    return `
-    <div class="entry ${status}" data-id="${e.id}">
-      <div class="case-no">#${String(entries.length - index).padStart(3,'0')}</div>
-      <div class="badge ${status}">${status}</div>
-      <div class="addr">${escapeHtml(e.address || 'No address yet')}</div>
-      <div class="date">Photo date: ${dateStr}</div>
-      ${e.note ? `<div class="note">${escapeHtml(e.note)}</div>` : ''}
-      <div class="thumbrow">
-        ${(e.photos || []).map(src => `<div class="thumb"><img src="${src}"></div>`).join('')}
-      </div>
-      <div class="row-actions">
-        <span class="editbtn" data-id="${e.id}">Edit</span>
-        <span class="togglebtn" data-id="${e.id}" data-status="${status}">${status === 'open' ? 'Mark resolved' : 'Reopen'}</span>
-        ${e.lat != null ? `<span class="mapbtn" data-lat="${e.lat}" data-lon="${e.lon}">View map</span>` : ''}
-        <span class="del" data-id="${e.id}">Delete</span>
-      </div>
-    </div>`;
-  }).join('');
-
-  logList.querySelectorAll('.editbtn').forEach(el=>{
-    el.addEventListener('click', ()=> loadEntryForEdit(el.dataset.id));
-  });
-
-  logList.querySelectorAll('.togglebtn').forEach(el=>{
-    el.addEventListener('click', async ()=>{
-      const id = el.dataset.id;
-      const oldStatus = el.dataset.status || 'open';
-      const newStatus = oldStatus === 'open' ? 'resolved' : 'open';
-
-      const { error } = await supabaseClient
-        .from(SUPABASE_TABLE)
-        .update({
-          status: newStatus,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id);
-
-      if(error){
-        console.error('Status update failed:', error);
-        toast('Could not update status');
-        return;
-      }
-
-      await renderLog(searchBox.value);
+  pills.forEach(p=>{
+    p.addEventListener('click', ()=>{
+      pills.forEach(x => x.classList.remove('active'));
+      p.classList.add('active');
+      activeFilter = p.dataset.filter;
+      renderLog(searchBox.value);
     });
   });
 
-  logList.querySelectorAll('.mapbtn').forEach(el=>{
-    el.addEventListener('click', ()=>{
-      window.open(`https://www.openstreetmap.org/?mlat=${el.dataset.lat}&mlon=${el.dataset.lon}#map=18/${el.dataset.lat}/${el.dataset.lon}`, '_blank');
+  async function renderLog(filter=''){
+    const entries = await loadEntries();
+    const q = filter.trim().toLowerCase();
+
+    let filtered = q ? entries.filter(e =>
+      (e.address || '').toLowerCase().includes(q) ||
+      (e.note || '').toLowerCase().includes(q) ||
+      (e.emailBody || '').toLowerCase().includes(q)
+    ) : entries.slice();
+
+    if(activeFilter !== 'all'){
+      filtered = filtered.filter(e => (e.status || 'open') === activeFilter);
+    }
+
+    logCount.textContent = `${filtered.length} case${filtered.length === 1 ? '' : 's'}${q || activeFilter !== 'all' ? ' (filtered)' : ''}`;
+
+    if(filtered.length === 0){
+      logList.innerHTML = `<div class="empty-log">No cases match here yet.</div>`;
+      return;
+    }
+
+    logList.innerHTML = filtered.map((e, index)=>{
+      const dateStr = e.capturedAt
+        ? new Date(e.capturedAt).toLocaleDateString()
+        : (e.savedAt ? new Date(e.savedAt).toLocaleDateString() : '');
+
+      const status = e.status || 'open';
+
+      return `
+        <div class="entry ${status}" data-id="${e.id}">
+          <div class="case-no">#${String(entries.length - index).padStart(3,'0')}</div>
+          <div class="badge ${status}">${status}</div>
+          <div class="addr">${escapeHtml(e.address || 'No address yet')}</div>
+          <div class="date">Photo date: ${dateStr}</div>
+          ${e.note ? `<div class="note">${escapeHtml(e.note)}</div>` : ''}
+          <div class="thumbrow">
+            ${(e.photos || []).map(src => `<div class="thumb"><img src="${escapeHtml(src)}" alt="case photo"></div>`).join('')}
+          </div>
+          <div class="row-actions">
+            <span class="editbtn" data-id="${e.id}">Edit</span>
+            <span class="togglebtn" data-id="${e.id}" data-status="${status}">${status === 'open' ? 'Mark resolved' : 'Reopen'}</span>
+            ${e.lat != null ? `<span class="mapbtn" data-lat="${e.lat}" data-lon="${e.lon}">View map</span>` : ''}
+            <span class="del" data-id="${e.id}">Delete</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    logList.querySelectorAll('.editbtn').forEach(el=>{
+      el.addEventListener('click', ()=> loadEntryForEdit(el.dataset.id));
     });
-  });
 
-  logList.querySelectorAll('.del').forEach(el=>{
-    el.addEventListener('click', async ()=>{
-      if(!confirm('Delete this case from the log?')) return;
+    logList.querySelectorAll('.togglebtn').forEach(el=>{
+      el.addEventListener('click', async ()=>{
+        const id = el.dataset.id;
+        const oldStatus = el.dataset.status || 'open';
+        const newStatus = oldStatus === 'open' ? 'resolved' : 'open';
 
-      const { error } = await supabaseClient
-        .from(SUPABASE_TABLE)
-        .delete()
-        .eq('id', el.dataset.id);
+        const { error } = await supabaseClient
+          .from(SUPABASE_TABLE)
+          .update({
+            status: newStatus,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', id);
 
-      if(error){
-        console.error('Delete failed:', error);
-        toast('Could not delete case');
-        return;
-      }
+        if(error){
+          console.error('Status update failed:', error);
+          toast('Could not update status');
+          return;
+        }
 
-      toast('Case deleted');
-      await renderLog(searchBox.value);
+        await renderLog(searchBox.value);
+      });
     });
-  });
-}
 
-  function escapeHtml(s){
-    const d = document.createElement('div');
-    d.textContent = s;
-    return d.innerHTML;
+    logList.querySelectorAll('.mapbtn').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        window.open(`https://www.openstreetmap.org/?mlat=${el.dataset.lat}&mlon=${el.dataset.lon}#map=18/${el.dataset.lat}/${el.dataset.lon}`, '_blank');
+      });
+    });
+
+    logList.querySelectorAll('.del').forEach(el=>{
+      el.addEventListener('click', async ()=>{
+        if(!confirm('Delete this case from the log?')) return;
+
+        const { error } = await supabaseClient
+          .from(SUPABASE_TABLE)
+          .delete()
+          .eq('id', el.dataset.id);
+
+        if(error){
+          console.error('Delete failed:', error);
+          toast('Could not delete case');
+          return;
+        }
+
+        toast('Case deleted');
+        await renderLog(searchBox.value);
+      });
+    });
   }
 
   searchBox.addEventListener('input', ()=> renderLog(searchBox.value));
 
   exportCsvBtn.addEventListener('click', async ()=>{
-  const entries = await loadEntries();
+    const entries = await loadEntries();
 
-  if(entries.length === 0){
-    toast('No cases to export');
-    return;
-  }
+    if(entries.length === 0){
+      toast('No cases to export');
+      return;
+    }
 
-  const rows = [['Address','Latitude','Longitude','Photo Date','Status','Note','Saved At']];
+    const rows = [['Address','Latitude','Longitude','Photo Date','Status','Note','Saved At']];
 
-  entries.forEach(e=>{
-    rows.push([
-      e.address || '',
-      e.lat || '',
-      e.lon || '',
-      e.capturedAt ? new Date(e.capturedAt).toLocaleString() : '',
-      e.status || 'open',
-      (e.note || '').replace(/\n/g,' '),
-      e.savedAt ? new Date(e.savedAt).toLocaleString() : ''
-    ]);
+    entries.forEach(e=>{
+      rows.push([
+        e.address || '',
+        e.lat || '',
+        e.lon || '',
+        e.capturedAt ? new Date(e.capturedAt).toLocaleString() : '',
+        e.status || 'open',
+        (e.note || '').replace(/\n/g,' '),
+        e.savedAt ? new Date(e.savedAt).toLocaleString() : ''
+      ]);
+    });
+
+    const csv = rows
+      .map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(','))
+      .join('\n');
+
+    downloadBlob(csv, 'text/csv', `case-log-${new Date().toISOString().slice(0,10)}.csv`);
   });
 
-  const csv = rows
-    .map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(','))
-    .join('\n');
-
-  downloadBlob(csv, 'text/csv', `case-log-${new Date().toISOString().slice(0,10)}.csv`);
-});
-
   exportJsonBtn.addEventListener('click', async ()=>{
-  const entries = await loadEntries();
+    const entries = await loadEntries();
 
-  if(entries.length === 0){
-    toast('No cases to back up');
-    return;
-  }
+    if(entries.length === 0){
+      toast('No cases to back up');
+      return;
+    }
 
-  downloadBlob(JSON.stringify(entries, null, 2), 'application/json', `case-log-backup-${new Date().toISOString().slice(0,10)}.json`);
-  toast('Backup file saved');
-});
+    downloadBlob(JSON.stringify(entries, null, 2), 'application/json', `case-log-backup-${new Date().toISOString().slice(0,10)}.json`);
+    toast('Backup file saved');
+  });
 
   importJsonBtn.addEventListener('click', ()=> importFile.click());
+
   importFile.addEventListener('change', e=>{
-  const file = e.target.files[0];
-  if(!file) return;
+    const file = e.target.files[0];
+    if(!file) return;
 
-  const reader = new FileReader();
+    const reader = new FileReader();
 
-  reader.onload = async ()=>{
-    try{
-      const data = JSON.parse(reader.result);
-      if(!Array.isArray(data)) throw new Error('bad format');
+    reader.onload = async ()=>{
+      try{
+        const data = JSON.parse(reader.result);
+        if(!Array.isArray(data)) throw new Error('bad format');
 
-      const existing = await loadEntries();
-      const proceed = existing.length === 0 || confirm(`This will replace your current ${existing.length} case(s) with ${data.length} case(s) from the backup. Continue?`);
-      if(!proceed) return;
+        const existing = await loadEntries();
+        const proceed = existing.length === 0 || confirm(`This will replace your current ${existing.length} case(s) with ${data.length} case(s) from the backup. Continue?`);
 
-      const { error: deleteError } = await supabaseClient
-        .from(SUPABASE_TABLE)
-        .delete()
-        .not('id', 'is', null);
+        if(!proceed) return;
 
-      if(deleteError) throw deleteError;
-
-      for(const oldCase of data){
-        const caseId = crypto.randomUUID();
-        const photos = await uploadPhotosForCase(oldCase.photos || [], caseId);
-
-        const record = {
-          id: caseId,
-          address: oldCase.address || '',
-          lat: oldCase.lat || null,
-          lon: oldCase.lon || null,
-          captured_at: oldCase.capturedAt ? new Date(oldCase.capturedAt).toISOString() : null,
-          status: oldCase.status || 'open',
-          note: oldCase.note || '',
-          photos,
-          updated_at: new Date().toISOString()
-        };
-
-        const { error } = await supabaseClient
+        const { error: deleteError } = await supabaseClient
           .from(SUPABASE_TABLE)
-          .insert(record);
+          .delete()
+          .not('id', 'is', null);
 
-        if(error) throw error;
+        if(deleteError) throw deleteError;
+
+        for(const oldCase of data){
+          const caseId = crypto.randomUUID();
+          const photos = await uploadPhotosForCase(oldCase.photos || [], caseId);
+
+          const record = {
+            id: caseId,
+            address: oldCase.address || '',
+            lat: oldCase.lat || null,
+            lon: oldCase.lon || null,
+            captured_at: oldCase.capturedAt ? new Date(oldCase.capturedAt).toISOString() : null,
+            status: oldCase.status || 'open',
+            note: oldCase.note || '',
+            photos,
+            updated_at: new Date().toISOString()
+          };
+
+          const { error } = await supabaseClient
+            .from(SUPABASE_TABLE)
+            .insert(record);
+
+          if(error) throw error;
+        }
+
+        await renderLog();
+        toast('Backup restored');
+      } catch(err){
+        console.error('Restore failed:', err);
+        toast('Could not restore backup');
       }
+    };
 
-      await renderLog();
-      toast('Backup restored to Supabase');
-    } catch(err){
-      console.error('Restore failed:', err);
-      toast('Could not restore backup');
-    }
-  };
-
-  reader.readAsText(file);
-  importFile.value = '';
-});
+    reader.readAsText(file);
+    importFile.value = '';
+  });
 
   function downloadBlob(content, type, filename){
-    const blob = new Blob([content], {type});
+    const blob = new Blob([content], { type });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = filename;
     a.click();
   }
 
- async function testSupabaseConnection(){
-  try{
-    const { error } = await supabaseClient
-      .from(SUPABASE_TABLE)
-      .select('id')
-      .limit(1);
+  function initPhotoViewer(){
+    const viewer = document.createElement('div');
+    viewer.className = 'photo-viewer';
+    viewer.innerHTML = `
+      <div class="close-photo">×</div>
+      <img src="" alt="Large case photo">
+    `;
 
-    if(error){
-      console.error('Supabase connection error:', error);
-      toast('Supabase connection failed — check table/policies');
-    } else {
-      console.log('Supabase connected');
-      toast('Supabase connected');
+    document.body.appendChild(viewer);
+
+    const viewerImg = viewer.querySelector('img');
+    const closeBtn = viewer.querySelector('.close-photo');
+
+    function closeViewer(){
+      viewer.classList.remove('show');
+      viewerImg.src = '';
     }
-  } catch(err){
-    console.error('Supabase test failed:', err);
-    toast('Supabase test failed');
-  }
-}
 
-renderLog();
-testSupabaseConnection();
+    document.addEventListener('click', e=>{
+      if(e.target.closest('.rm')) return;
+
+      const img = e.target.closest('.thumb img');
+      if(!img) return;
+
+      viewerImg.src = img.src;
+      viewer.classList.add('show');
+    });
+
+    closeBtn.addEventListener('click', closeViewer);
+
+    viewer.addEventListener('click', e=>{
+      if(e.target === viewer) closeViewer();
+    });
+
+    document.addEventListener('keydown', e=>{
+      if(e.key === 'Escape') closeViewer();
+    });
+  }
+
+  async function testSupabaseConnection(){
+    try{
+      const { error } = await supabaseClient
+        .from(SUPABASE_TABLE)
+        .select('id')
+        .limit(1);
+
+      if(error){
+        console.error('Supabase connection error:', error);
+        toast('Supabase connection failed');
+      } else {
+        console.log('Supabase connected');
+      }
+    } catch(err){
+      console.error('Supabase test failed:', err);
+      toast('Supabase test failed');
+    }
+  }
+
+  initPhotoViewer();
+  renderLog();
+  testSupabaseConnection();
 })();
 </script>
 
