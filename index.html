@@ -663,6 +663,10 @@
       padding-left:12px;
       padding-right:12px;
     }
+    .case-list-label{
+  margin-top:18px;
+  margin-bottom:6px;
+}
 
     .top-toolbar{
       gap:7px;
@@ -723,20 +727,21 @@
 </header>
 
 <main>
-  <div class="stage-label">Case Log</div>
+  <div class="stage-label">Case Log Search</div>
 
   <div class="top-toolbar">
     <input type="search" id="searchBox" placeholder="Start typing address, street, or note...">
   </div>
 
-  <div class="top-filters">
-    <div class="pill active" data-filter="all">All</div>
-    <div class="pill" data-filter="open">Open</div>
-    <div class="pill" data-filter="resolved">Resolved</div>
-  </div>
+ <div class="top-filters">
+  <div class="pill active" data-filter="all">All</div>
+  <div class="pill" data-filter="open">Open</div>
+  <div class="pill" data-filter="resolved">Resolved</div>
+</div>
 
-  <div class="log-count" id="logCount"></div>
-  <div id="logList"></div>
+<div class="stage-label case-list-label">Case Log</div>
+<div class="log-count" id="logCount"></div>
+<div id="logList"></div>
 
   <div class="backup-panel">
     <div class="stage-label">Backup &amp; Restore</div>
@@ -844,10 +849,42 @@
   let manualExistingCapturedAt = null;
   let manualExistingStatus = 'open';
   let isManualOpen = false;
+let handlingBackButton = false;
 
-  let manualLocationLat = null;
-  let manualLocationLon = null;
-  let manualLocationAddress = "";
+let manualLocationLat = null;
+let manualLocationLon = null;
+let manualLocationAddress = "";
+
+function pushAppHistory(type, id){
+  if(handlingBackButton) return;
+
+  history.pushState(
+    {
+      pinItPanel: type,
+      pinItId: id || null
+    },
+    ""
+  );
+}
+
+window.addEventListener("popstate", ()=>{
+  handlingBackButton = true;
+
+  if(isManualOpen){
+    closeManualModal(true);
+    handlingBackButton = false;
+    return;
+  }
+
+  if(openEntryId){
+    openEntryId = null;
+    renderLog(searchBox.value);
+    handlingBackButton = false;
+    return;
+  }
+
+  handlingBackButton = false;
+});
 
   function toast(msg){
     toastEl.textContent = msg;
@@ -1180,12 +1217,16 @@
     renderManualPreviews();
 
     manualOverlay.classList.add('show');
-    isManualOpen = true;
+isManualOpen = true;
 
-    setTimeout(()=> manualAddress.focus(), 80);
+pushAppHistory('manual', manualEditId || 'new');
+
+setTimeout(()=> manualAddress.focus(), 80);
+  function closeManualModal(fromBackButton = false){
+  if(!fromBackButton && isManualOpen && history.state && history.state.pinItPanel === 'manual'){
+    history.back();
+    return;
   }
-
-  function closeManualModal(){
     manualOverlay.classList.remove('show');
     isManualOpen = false;
     manualEditId = null;
@@ -1389,7 +1430,11 @@
       filtered = filtered.filter(e => (e.status || 'open') === activeFilter);
     }
 
-    logCount.textContent = `${filtered.length} case${filtered.length === 1 ? '' : 's'}${query || activeFilter !== 'all' ? ' shown' : ''}`;
+   if(query || activeFilter !== 'all'){
+  logCount.textContent = `${entries.length} case${entries.length === 1 ? '' : 's'} total · ${filtered.length} shown`;
+} else {
+  logCount.textContent = `${entries.length} case${entries.length === 1 ? '' : 's'} total`;
+}
 
     if(filtered.length === 0){
       logList.innerHTML = `<div class="empty-log">No cases match here yet.</div>`;
@@ -1446,13 +1491,20 @@
     }).join('');
 
     logList.querySelectorAll('.case-summary').forEach(summary=>{
-      summary.addEventListener('click', ()=>{
-        const id = summary.dataset.id;
-        openEntryId = openEntryId === id ? null : id;
-        renderLog(searchBox.value);
-      });
-    });
+  summary.addEventListener('click', ()=>{
+    const id = summary.dataset.id;
 
+    if(openEntryId === id){
+      openEntryId = null;
+      renderLog(searchBox.value);
+      return;
+    }
+
+    openEntryId = id;
+    pushAppHistory('case', id);
+    renderLog(searchBox.value);
+  });
+});
     logList.querySelectorAll('.editbtn').forEach(el=>{
       el.addEventListener('click', async e=>{
         e.stopPropagation();
