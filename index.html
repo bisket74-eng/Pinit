@@ -1188,6 +1188,40 @@
     </div>
   `;
 }
+ async function loadEntries(){
+  const { data, error } = await supabaseClient
+    .from(SUPABASE_TABLE)
+    .select('*')
+    .order('created_at', { ascending:false });
+
+  if(error){
+    console.error('Could not load Supabase cases:', error);
+    toast('Could not load cases');
+    return [];
+  }
+
+  return (data || []).map(row => ({
+    id: row.id,
+    address: row.address || '',
+    lat: row.lat,
+    lon: row.lon,
+    capturedAt: row.captured_at,
+    note: row.note || '',
+    status: row.status || 'open',
+    photos: Array.isArray(row.photos) ? row.photos : [],
+    savedAt: row.created_at,
+    emailSubject: row.email_subject || '',
+    emailFrom: row.email_from || '',
+    emailBody: row.email_body || '',
+
+    gisSiteAddress: row.gis_site_address || '',
+    gisCityStateZip: row.gis_city_state_zip || '',
+    gisLegalShort: row.gis_legal_short || '',
+    gisPlatName: row.gis_plat_name || '',
+    gisNeighborhood: row.gis_neighborhood || '',
+    gisPropId: row.gis_prop_id || ''
+  }));
+}
   function dataUrlToBlob(dataUrl){
     const parts = dataUrl.split(',');
     const header = parts[0] || '';
