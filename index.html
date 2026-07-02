@@ -1933,23 +1933,9 @@ filtered.forEach((e, index)=>{
 });
 
 logList.innerHTML = groupedHtml.join('');
-            </div>
+         
 
-            <div class="row-actions">
-              <div class="action-left">
-                <button class="case-action editbtn" data-id="${e.id}">Edit</button>
-                <button class="case-action togglebtn" data-id="${e.id}" data-status="${status}">${status === 'open' ? 'Mark Resolved' : 'Reopen'}</button>
-                ${e.lat != null ? `<button class="case-action mapbtn" data-lat="${e.lat}" data-lon="${e.lon}">View Map</button>` : ''}
-                <button class="case-action exportonebtn" data-id="${e.id}">Export CSV</button>
-              </div>
-              <div class="action-right">
-                <button class="case-action delete-action del" data-id="${e.id}">Delete</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-    }).join('');
+            
 
     logList.querySelectorAll('.case-summary').forEach(summary=>{
       summary.addEventListener('click', e=>{
