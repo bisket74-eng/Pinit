@@ -2077,10 +2077,9 @@ button#addManualBtn.header-plus{
       return;
     }
 
-    const groupedHtml = [];
-   const searchActive = (searchInput.value || '').trim().length > 0;
+  const groupedHtml = [];
+const searchActive = query.length > 0;
 let lastDateGroup = '';
-
 filtered.forEach((e, index)=>{
   const savedDate = e.savedAt || e.capturedAt || new Date().toISOString();
   const dateObj = new Date(savedDate);
@@ -2091,7 +2090,7 @@ filtered.forEach((e, index)=>{
     year:'numeric'
   });
 const dateKey = dateObj.toISOString().slice(0,10);
-const dateClosed = closedDateGroups.has(dateKey);
+const dateClosed = !searchActive && closedDateGroups.has(dateKey);
 
 if(dateGroup !== lastDateGroup){
   groupedHtml.push(`
@@ -2188,7 +2187,7 @@ logList.innerHTML = groupedHtml.join('');
       closedDateGroups.add(key);
     }
 
-    renderLog();
+   renderLog(searchBox.value);
   });
 });
 
