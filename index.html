@@ -1109,38 +1109,82 @@ button#addManualBtn.header-plus{
   color:#fff;
   border:1px solid var(--ink);
 }
- @media (min-width:900px){
+@media (min-width:900px){
   body{
-    padding:24px 0 34px;
+    height:100vh;
+    overflow:hidden;
+    padding:24px 0;
   }
 
-  body::before{
-    content:"";
-    position:fixed;
-    top:18px;
-    bottom:18px;
-    left:50%;
+  .app-frame{
     width:min(880px, calc(100vw - 48px));
-    transform:translateX(-50%);
-    border:1px solid rgba(140,95,38,.28);
+    height:calc(100vh - 48px);
+    margin:0 auto;
+
+    border:1px solid rgba(140,95,38,.32);
     border-radius:24px;
+    background:var(--paper);
     box-shadow:
-      0 18px 50px rgba(58,49,40,.12),
+      0 18px 50px rgba(58,49,40,.14),
       inset 0 0 0 5px rgba(255,255,255,.22);
-    pointer-events:none;
-    z-index:-1;
+
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
   }
 
-  header,
-  main{
+  .app-frame header{
+    flex:0 0 auto;
+    width:100%;
     max-width:820px;
+  }
+
+  .app-frame main{
+    flex:1;
+    min-height:0;
+    width:100%;
+    max-width:820px;
+
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    padding-bottom:18px;
+  }
+
+  #logList{
+    flex:1;
+    min-height:120px;
+    overflow-y:auto;
+    padding-right:8px;
+    margin-right:-4px;
+  }
+
+  #logList::-webkit-scrollbar{
+    width:10px;
+  }
+
+  #logList::-webkit-scrollbar-track{
+    background:rgba(255,255,255,.35);
+    border-radius:20px;
+  }
+
+  #logList::-webkit-scrollbar-thumb{
+    background:rgba(140,95,38,.35);
+    border-radius:20px;
+    border:2px solid rgba(255,255,255,.45);
+  }
+
+  .backup-panel{
+    flex:0 0 auto;
   }
 }
 </style>
 </head>
 
 <body>
-
+ 
+<div class="app-frame">
+ 
 <header>
   <div class="eyebrow">HOA Field Reports</div>
   <h1>Pin It</h1>
@@ -1174,7 +1218,9 @@ button#addManualBtn.header-plus{
     <div class="backup-note">Backups are saved as a single file with every case and photo included. Restoring replaces the current online log, so keep your most recent backup file.</div>
   </div>
 </main>
-
+ 
+<div>
+ 
 <div class="manual-overlay" id="manualOverlay">
   <div class="manual-card">
     <div class="manual-head">
