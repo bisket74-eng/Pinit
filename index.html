@@ -1389,6 +1389,73 @@ button#addManualBtn.header-plus{
     min-height:0 !important;
   }
 }
+@media (min-width:900px){
+
+  .entry.open-card::after{
+    display:none !important;
+    content:none !important;
+  }
+
+  .entry.open-card{
+    overflow:hidden !important;
+  }
+
+  .entry.open-card .case-details{
+    position:static !important;
+    top:auto !important;
+    left:auto !important;
+    transform:none !important;
+
+    width:auto !important;
+    max-height:none !important;
+    overflow:visible !important;
+
+    display:block !important;
+    background:transparent !important;
+    border:0 !important;
+    border-top:1px dashed var(--rule) !important;
+    border-radius:0 !important;
+    box-shadow:none !important;
+
+    padding:10px 14px 14px !important;
+    z-index:auto !important;
+  }
+
+  .case-detail-close{
+    display:none !important;
+  }
+} 
+ @media (min-width:900px){
+
+  .photo-viewer-inner{
+    position:relative;
+    display:inline-block;
+  }
+
+  .photo-viewer-inner img{
+    display:block;
+    max-width:90vw;
+    max-height:84vh;
+  }
+
+  .photo-viewer-inner .close-photo{
+    position:absolute !important;
+    top:-16px !important;
+    right:-16px !important;
+    width:42px !important;
+    height:42px !important;
+    border-radius:50% !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    padding:0 !important;
+    line-height:1 !important;
+    background:rgba(58,49,40,.86) !important;
+    color:#fff !important;
+    border:1px solid rgba(255,255,255,.65) !important;
+    z-index:10000 !important;
+  }
+}
 </style>
 </head>
 
@@ -2498,7 +2565,7 @@ if(dateClosed){
   <div class="thumb">
     <a
       href="${escapeHtml(src)}"
-      target="_blank"
+ 
       rel="noopener"
       draggable="true"
       data-photo-url="${escapeHtml(src)}"
@@ -2832,11 +2899,12 @@ deleteConfirmBtn.addEventListener('click', async ()=>{
   function initPhotoViewer(){
     const viewer = document.createElement('div');
     viewer.className = 'photo-viewer';
-    viewer.innerHTML = `
-      <div class="close-photo">×</div>
-      <img src="" alt="Large case photo">
-    `;
-
+   viewer.innerHTML = `
+  <div class="photo-viewer-inner">
+    <button class="close-photo" type="button">×</button>
+    <img src="" alt="Large case photo">
+  </div>
+`;
     document.body.appendChild(viewer);
 
     const viewerImg = viewer.querySelector('img');
@@ -2848,13 +2916,15 @@ deleteConfirmBtn.addEventListener('click', async ()=>{
     }
 
     document.addEventListener('click', e=>{
-      const img = e.target.closest('.thumb img, .manual-preview img');
-      if(!img) return;
+  const img = e.target.closest('.thumb img, .manual-preview img');
+  if(!img) return;
 
-      viewerImg.src = img.src;
-      viewer.classList.add('show');
-    });
+  e.preventDefault();
+  e.stopPropagation();
 
+  viewerImg.src = img.src;
+  viewer.classList.add('show');
+});
     closeBtn.addEventListener('click', closeViewer);
 
     viewer.addEventListener('click', e=>{
