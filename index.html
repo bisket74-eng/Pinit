@@ -2078,6 +2078,7 @@ button#addManualBtn.header-plus{
     }
 
     const groupedHtml = [];
+   const searchActive = (searchInput.value || '').trim().length > 0;
 let lastDateGroup = '';
 
 filtered.forEach((e, index)=>{
