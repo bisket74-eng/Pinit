@@ -2187,31 +2187,17 @@ let pendingDeleteId = null;
     backfillMissingGis(entries);
     const query = normalizeSearchText(filter);
 
-    let filtered = query ? entries.filter(e => {
-      const address = normalizeSearchText(e.address || '');
-      const shortAddr = normalizeSearchText(shortAddress(e.address || ''));
-      const prettyAddrSingle = normalizeSearchText(displayAddressSingle(e.address || ''));
-      const prettyAddrMulti = normalizeSearchText(displayAddressMulti(e.address || ''));
-      const officialAddr = normalizeSearchText(officialDisplayAddress(e));
-      const gisLegal = normalizeSearchText(e.gisLegalShort || '');
-      const gisPlat = normalizeSearchText(e.gisPlatName || '');
-      const gisProp = normalizeSearchText(e.gisPropId || '');
-      const note = normalizeSearchText(e.note || '');
-      const emailBody = normalizeSearchText(e.emailBody || '');
+   let filtered = query ? entries.filter(e => {
+  const visibleStreet = normalizeSearchText(shortAddress(e.address || ''));
+  const visibleCityZip = normalizeSearchText(cleanCityStateZip(e.address || ''));
+  const note = normalizeSearchText(e.note || '');
 
-      return (
-        address.includes(query) ||
-        shortAddr.includes(query) ||
-        prettyAddrSingle.includes(query) ||
-        prettyAddrMulti.includes(query) ||
-        officialAddr.includes(query) ||
-        gisLegal.includes(query) ||
-        gisPlat.includes(query) ||
-        gisProp.includes(query) ||
-        note.includes(query) ||
-        emailBody.includes(query)
-      );
-    }) : entries.slice();
+  return (
+    visibleStreet.includes(query) ||
+    visibleCityZip.includes(query) ||
+    note.includes(query)
+  );
+}) : entries.slice();
 
     if(activeFilter !== 'all'){
       filtered = filtered.filter(e => (e.status || 'open') === activeFilter);
