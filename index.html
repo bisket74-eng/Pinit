@@ -675,28 +675,7 @@
   flex:1;
 }
 
-.summary-status{
-  flex:0 0 auto;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  font-size:12px;
-  font-weight:900;
-  letter-spacing:.04em;
-  text-transform:uppercase;
-  padding:5px 9px;
-  border-radius:999px;
-}
 
-.summary-status.open{
-  background:#F3E5DD;
-  color:#7E3E28;
-}
-
-.summary-status.resolved{
-  background:#E7EADE;
-  color:var(--sage-dark);
-}
 
   .manual-previews{
     display:flex;
@@ -1953,19 +1932,18 @@ filtered.forEach((e, index)=>{
   groupedHtml.push(`
     <div class="entry ${status} ${isOpen ? 'open-card' : ''}" data-id="${e.id}">
       <div class="case-summary" data-id="${e.id}">
-       <div class="summary-left">
-  <span class="summary-status ${status}">${status}</span>
-  <div class="summary-address-block">
-    <div class="addr">${escapeHtml(shortAddress(e.address || 'No address yet'))}</div>
-    <div class="summary-cityzip">${escapeHtml(cleanCityStateZip(e.address || ''))}</div>
+  <div class="summary-left">
+    <div class="summary-address-block">
+      <div class="addr">${escapeHtml(shortAddress(e.address || 'No address yet'))}</div>
+      <div class="summary-cityzip">${escapeHtml(cleanCityStateZip(e.address || ''))}</div>
+    </div>
   </div>
+  <div class="open-toggle">${toggleSymbol}</div>
 </div>
-        <div class="open-toggle">${toggleSymbol}</div>
-      </div>
-
       <div class="case-details">
-       <div class="details-topline">
+      <div class="details-topline">
   <div>
+    <div class="badge ${status}">${status}</div>
     <div class="date">${dateStr ? 'Saved: ' + dateStr : ''}</div>
   </div>
   <div class="case-no">#${number}</div>
