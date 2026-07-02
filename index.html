@@ -74,21 +74,31 @@
   }
 
   .header-plus{
-    position:absolute;
-    right:18px;
-    top:34px;
-    width:48px;
-    height:48px;
-    border-radius:50%;
-    padding:0;
-    font-size:34px;
-    line-height:42px;
-    text-align:center;
-    background:var(--amber);
-    border:1px solid var(--amber-dark);
-    color:#fff;
-    box-shadow:0 4px 12px rgba(58,49,40,.18);
-  }
+  position:absolute;
+  right:20px;
+  top:44px;
+  width:58px;
+  height:58px;
+  border-radius:50%;
+  padding:0;
+  margin:0;
+  background:var(--amber);
+  border:2px solid rgba(255,255,255,.75);
+  color:#fff;
+  box-shadow:
+    0 5px 14px rgba(58,49,40,.22),
+    inset 0 1px 0 rgba(255,255,255,.28);
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  font-family:'Karla', Arial, sans-serif;
+  font-size:42px;
+  font-weight:800;
+  line-height:1;
+  text-align:center;
+}
 
   main{
     max-width:820px;
@@ -1111,6 +1121,30 @@ h1{
 
     return text;
   }
+ function abbreviateAddressWords(value){
+  return String(value || '')
+    .replace(/\bNortheast\b/gi, 'NE')
+    .replace(/\bNorthwest\b/gi, 'NW')
+    .replace(/\bSoutheast\b/gi, 'SE')
+    .replace(/\bSouthwest\b/gi, 'SW')
+    .replace(/\bNorth\b/gi, 'N')
+    .replace(/\bSouth\b/gi, 'S')
+    .replace(/\bEast\b/gi, 'E')
+    .replace(/\bWest\b/gi, 'W')
+    .replace(/\bCircle\b/gi, 'Cir')
+    .replace(/\bAvenue\b/gi, 'Ave')
+    .replace(/\bStreet\b/gi, 'St')
+    .replace(/\bDrive\b/gi, 'Dr')
+    .replace(/\bRoad\b/gi, 'Rd')
+    .replace(/\bCourt\b/gi, 'Ct')
+    .replace(/\bPlace\b/gi, 'Pl')
+    .replace(/\bLane\b/gi, 'Ln')
+    .replace(/\bBoulevard\b/gi, 'Blvd')
+    .replace(/\bTerrace\b/gi, 'Ter')
+    .replace(/\bParkway\b/gi, 'Pkwy')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
   function cleanStreetAddress(address){
     const value = String(address || '').trim();
@@ -1122,10 +1156,10 @@ h1{
     const parts = value.split(',').map(p => p.trim()).filter(Boolean);
 
     if(parts.length >= 2 && /^\d+[A-Za-z]?$/.test(parts[0])){
-      return `${parts[0]} ${parts[1]}`;
+     return abbreviateAddressWords(`${parts[0]} ${parts[1]}`);
     }
 
-    return parts[0] || value;
+    return abbreviateAddressWords(parts[0] || value);
   }
 
   function cleanCityStateZip(address){
@@ -1214,18 +1248,18 @@ h1{
     const street = cleanStreetAddress(address);
     const cityStateZip = cleanCityStateZip(address);
 
-    return cityStateZip
-      ? `${street}\n${cityStateZip}`
-      : street;
+   return cityStateZip
+  ? `${abbreviateAddressWords(street)}\n${cityStateZip}`
+  : abbreviateAddressWords(street);
   }
 
   function displayAddressSingle(address){
     const street = cleanStreetAddress(address);
     const cityStateZip = cleanCityStateZip(address);
 
-    return cityStateZip
-      ? `${street}, ${cityStateZip}`
-      : street;
+   return cityStateZip
+  ? `${abbreviateAddressWords(street)}, ${cityStateZip}`
+  : abbreviateAddressWords(street);
   }
 
   function shortAddress(address){
