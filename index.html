@@ -2117,7 +2117,7 @@ if(dateClosed){
   const toggleSymbol = isOpen ? '−' : '+';
 
   groupedHtml.push(`
-    <div class="entry ${status} ${isOpen ? 'open-card' : ''}" data-id="${e.id}">
+    <div class="entry ${status} ${isOpen ? 'open-card' : ''} ${searchActive ? 'search-hit' : ''}" data-id="${e.id}">
       <div class="case-summary" data-id="${e.id}">
   <div class="summary-left">
     <div class="summary-address-block">
