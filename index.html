@@ -1320,6 +1320,75 @@ button#addManualBtn.header-plus{
     color:var(--ink);
   }
 }
+ @media (min-width:900px){
+
+  .search-stage-label{
+    margin:2px 0 4px !important;
+    font-size:12px !important;
+  }
+
+  .compact-search-row{
+    display:flex !important;
+    align-items:center !important;
+    justify-content:space-between !important;
+    gap:10px !important;
+    flex-wrap:nowrap !important;
+    margin-top:0 !important;
+    margin-bottom:6px !important;
+  }
+
+  .compact-search-row input[type=search]{
+    flex:0 0 48% !important;
+    min-width:260px !important;
+    max-width:390px !important;
+    padding:7px 10px !important;
+    font-size:14px !important;
+  }
+
+  .compact-filters{
+    margin:0 !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:flex-end !important;
+    gap:6px !important;
+    flex:1 !important;
+  }
+
+  .compact-filters .pill{
+    padding:6px 14px !important;
+    font-size:13px !important;
+  }
+
+  .case-log-head{
+    display:flex !important;
+    align-items:center !important;
+    justify-content:space-between !important;
+    gap:12px !important;
+    margin:6px 0 5px !important;
+    padding-top:6px !important;
+    border-top:1px solid var(--rule) !important;
+  }
+
+  .case-log-head .stage-label{
+    margin:0 !important;
+    font-size:12px !important;
+  }
+
+  .case-log-head .stage-label::after{
+    display:none !important;
+  }
+
+  .case-log-head .log-count{
+    margin:0 !important;
+    font-size:13px !important;
+    white-space:nowrap !important;
+  }
+
+  #logList{
+    flex:1 !important;
+    min-height:0 !important;
+  }
+}
 </style>
 </head>
 
@@ -1334,21 +1403,24 @@ button#addManualBtn.header-plus{
 </header>
 
 <main>
-  <div class="stage-label">Case Log Search</div>
+  <div class="stage-label search-stage-label">Case Log Search</div>
 
-  <div class="top-toolbar">
-    <input type="search" id="searchBox" placeholder="Start typing address, street, or note...">
-  </div>
+<div class="top-toolbar compact-search-row">
+  <input type="search" id="searchBox" placeholder="Search address, street, or note...">
 
-  <div class="top-filters">
+  <div class="top-filters compact-filters">
     <div class="pill active" data-filter="all">All</div>
     <div class="pill" data-filter="open">Open</div>
     <div class="pill" data-filter="resolved">Resolved</div>
   </div>
+</div>
 
+<div class="case-log-head">
   <div class="stage-label case-list-label">Case Log</div>
   <div class="log-count" id="logCount"></div>
-  <div id="logList"></div>
+</div>
+
+<div id="logList"></div>
 
   <div class="backup-panel">
     <div class="stage-label">Backup &amp; Restore</div>
